@@ -8,20 +8,17 @@
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h1 { color: #e67e22; border-bottom: 2px solid #e67e22; }
         
-        /* ボタンの基本デザイン */
+        /* 速度ボタンのデザイン */
         .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin: 0 2px; transition: 0.3s; }
-        
-        /* ★ 押されたボタン（active）にだけつく色 */
-        .btn-speed.active {
-            background-color: #e67e22 !important; 
-            color: white;
-            border-color: #d35400;
-            font-weight: bold;
-        }
+        .btn-speed.active { background-color: #e67e22 !important; color: white; border-color: #d35400; font-weight: bold; }
 
+        /* 入力エリアのデザイン */
         .form-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         textarea { width: 100%; height: 100px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; }
         .btn-orange { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
+        
+        /* ★届いたアドバイスのリスト用デザイン */
+        #advice-list li { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -33,7 +30,7 @@
     <video id="myVideo" controls width="100%" style="border-radius: 5px; margin-bottom: 10px;">
         <source src="IMG_4277.MOV" type="video/quicktime">
         <source src="IMG_4277.MOV" type="video/mp4">
-        お使いのブラウザは動画再生に対応していません。
+        再生できません
     </video>
 
     <div style="text-align: center; margin-bottom: 20px;">
@@ -45,26 +42,51 @@
 
     <div class="form-area">
         <label style="font-weight: bold; display: block; margin-bottom: 5px;">アドバイスを投稿する：</label>
-        <textarea placeholder="例：スタートの1歩目をもう少し低く出すと加速がスムーズになりますよ！"></textarea>
-        <button class="btn-orange">アドバイスを送信</button>
+        <textarea id="advice-input" placeholder="例：スタートの1歩目をもう少し低く出すと加速がスムーズになりますよ！"></textarea>
+        <button class="btn-orange" onclick="sendAdvice()">アドバイスを送信</button>
+    </div>
+
+    <div id="advice-display-area" style="margin-top: 30px;">
+        <h3 style="font-size: 1em; color: #333; border-left: 4px solid #e67e22; padding-left: 10px;">届いたアドバイス</h3>
+        <ul id="advice-list" style="list-style: none; padding: 0;">
+            </ul>
     </div>
 </div>
 
 <script>
-    // element というのは「押されたボタンそのもの」のこと
+    // 【機能A】速度を変える魔法
     function changeSpeed(speed, element) {
-        // 1. 動画の速度を変える
         const video = document.getElementById('myVideo');
         video.playbackRate = speed;
-
-        // 2. 一旦、全部のボタンから「active（オレンジ色）」の印を消す
         const buttons = document.querySelectorAll('.btn-speed');
         buttons.forEach(btn => btn.classList.remove('active'));
-
-        // 3. 押されたボタン（element）にだけ「active」の印をつける
         element.classList.add('active');
+    }
 
-        console.log("現在の速度: " + speed);
+    // 【機能B】★アドバイスを下に表示する魔法
+    function sendAdvice() {
+        // ① 入力欄から文字を読み取る
+        const input = document.getElementById('advice-input');
+        const text = input.value;
+
+        // ② もし空っぽなら「書いて！」と教えてあげる
+        if (text.trim() === "") {
+            alert("アドバイスを入力してください！");
+            return;
+        }
+
+        // ③ 掲示板（ul）を見つける
+        const list = document.getElementById('advice-list');
+
+        // ④ 新しい「1行（li）」を作って、文字を入れる
+        const newLi = document.createElement('li');
+        newLi.innerHTML = `<strong>🏃‍♂️ コーチの助言:</strong><br>${text}`;
+
+        // ⑤ 掲示板の一番上に追加する（最新が上にくるように prepend）
+        list.prepend(newLi);
+
+        // ⑥ 書き終わったら入力欄を真っ白にする
+        input.value = "";
     }
 </script>
 
