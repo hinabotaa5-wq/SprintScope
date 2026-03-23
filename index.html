@@ -2,66 +2,102 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>SprintScope - 保存機能付きアドバイス掲示板</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SprintScope - ホーム & 分析</title>
     <style>
-        /* 見た目を整えるCSS */
-        body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; }
+        /* 基本デザイン */
+        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #e67e22; border-bottom: 2px solid #e67e22; }
-        
-        .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin: 0 2px; transition: 0.3s; }
-        .btn-speed.active { background-color: #e67e22 !important; color: white; border-color: #d35400; font-weight: bold; }
+        h1 { color: #e67e22; text-align: center; }
 
-        .form-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; }
-        .btn-orange { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
-        
-        /* 届いたアドバイスのデザイン */
-        #advice-list li { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        /* ホーム画面：動画グリッド */
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .video-card { background: #eee; border-radius: 8px; overflow: hidden; cursor: pointer; text-align: center; transition: 0.3s; }
+        .video-card:hover { transform: scale(1.02); }
+        .thumbnail { background: #333; color: white; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2em; }
+        .video-card p { padding: 10px; font-size: 0.8em; margin: 0; font-weight: bold; }
+
+        /* 分析画面：動画とボタン */
+        .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
+        .btn-speed.active { background-color: #e67e22 !important; color: white; border-color: #d35400; font-weight: bold; }
+        .btn-orange { background: #e67e22; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn-back { background: #95a5a6; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
+
+        /* アドバイス掲示板 */
+        #advice-list { padding: 0; list-style: none; }
+        #advice-list li { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; font-size: 0.9em; }
+        textarea { width: 100%; height: 80px; padding: 10px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div id="home-screen" class="container">
     <h1>SprintScope</h1>
-    <p>走りの動画をチェックしてアドバイスしよう！</p>
+    <p style="text-align: center; color: #666;">分析する動画を選択</p>
+    <div class="video-grid">
+        <div class="video-card" onclick="openAnalysis('IMG_4277.MOV', '3/21 100m走')">
+            <div class="thumbnail">🏃‍♂️</div>
+            <p>3/21 100m走</p>
+        </div>
+        <div class="video-card" onclick="openAnalysis('IMG_SAMPLE.MP4', 'スタート練習')">
+            <div class="thumbnail">🔥</div>
+            <p>スタート練習</p>
+        </div>
+    </div>
+</div>
 
-    <video id="myVideo" controls width="100%" style="border-radius: 5px; margin-bottom: 10px;">
-        <source src="IMG_4277.MOV" type="video/quicktime">
-        <source src="IMG_4277.MOV" type="video/mp4">
-        再生できません
+<div id="analysis-screen" class="container" style="display:none;">
+    <button class="btn-back" onclick="backToHome()">← 戻る</button>
+    <h2 id="current-title" style="font-size: 1.2em; color: #333;">動画分析</h2>
+
+    <video id="myVideo" controls width="100%" style="border-radius: 8px;">
+        <source src="" type="video/mp4">
     </video>
 
-    <div style="text-align: center; margin-bottom: 20px;">
-        <p style="font-size: 0.8em; color: #666; margin-bottom: 5px;">再生速度</p>
-        <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x (スロー)</button>
-        <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x (通常)</button>
-        <button class="btn-speed" onclick="changeSpeed(2.0, this)">2.0x (倍速)</button>
+    <div style="text-align: center; margin: 15px 0;">
+        <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
+        <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
+        <button class="btn-speed" onclick="changeSpeed(2.0, this)">2.0x</button>
     </div>
 
     <div class="form-area">
-        <label style="font-weight: bold; display: block; margin-bottom: 5px;">アドバイスを投稿する：</label>
-        <textarea id="advice-input" placeholder="例：スタートの1歩目をもう少し低く出すと加速がスムーズになりますよ！"></textarea>
-        <button class="btn-orange" onclick="sendAdvice()">アドバイスを送信</button>
+        <textarea id="advice-input" placeholder="分析結果をメモ..."></textarea>
+        <button class="btn-orange" onclick="sendAdvice()">分析を保存</button>
     </div>
 
-    <div id="advice-display-area" style="margin-top: 30px;">
-        <h3 style="font-size: 1em; color: #333; border-left: 4px solid #e67e22; padding-left: 10px;">届いたアドバイス</h3>
-        <ul id="advice-list" style="list-style: none; padding: 0;">
-            </ul>
+    <div style="margin-top: 20px;">
+        <h3 style="font-size: 1em; border-left: 4px solid #e67e22; padding-left: 10px;">この動画のアドバイス</h3>
+        <ul id="advice-list"></ul>
     </div>
 </div>
 
 <script>
-    // 【A】ページ読み込み時に保存データを復活させる
+    // 1. ページ読み込み時の処理
     window.onload = function() {
-        const saved = localStorage.getItem('myAdvices');
+        const saved = localStorage.getItem('sprintscope_advices');
         if (saved) {
             document.getElementById('advice-list').innerHTML = saved;
         }
     };
 
-    // 【B】速度を変える魔法
+    // 2. 画面切り替え：ホーム → 分析
+    function openAnalysis(file, title) {
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('analysis-screen').style.display = 'block';
+        
+        document.getElementById('current-title').innerText = title;
+        const video = document.getElementById('myVideo');
+        video.src = file;
+        video.load();
+    }
+
+    // 3. 画面切り替え：分析 → ホーム
+    function backToHome() {
+        document.getElementById('home-screen').style.display = 'block';
+        document.getElementById('analysis-screen').style.display = 'none';
+    }
+
+    // 4. 速度変更
     function changeSpeed(speed, element) {
         const video = document.getElementById('myVideo');
         video.playbackRate = speed;
@@ -70,27 +106,18 @@
         element.classList.add('active');
     }
 
-    // 【C】アドバイスを送信して保存する魔法
+    // 5. アドバイス送信と保存
     function sendAdvice() {
         const input = document.getElementById('advice-input');
-        const text = input.value;
-
-        if (text.trim() === "") {
-            alert("アドバイスを入力してください！");
-            return;
-        }
+        if (input.value.trim() === "") return;
 
         const list = document.getElementById('advice-list');
-        const newLi = document.createElement('li');
-        newLi.innerHTML = `<strong>🏃‍♂️ コーチの助言:</strong><br>${text}`;
+        const li = document.createElement('li');
+        const now = new Date();
+        li.innerHTML = `<small>${now.toLocaleString()}</small><br>${input.value}`;
+        list.prepend(li);
 
-        // 掲示板の先頭に追加
-        list.prepend(newLi);
-
-        // ★今の掲示板の中身を丸ごとブラウザに保存！
-        localStorage.setItem('myAdvices', list.innerHTML);
-
-        // 入力欄をクリア
+        localStorage.setItem('sprintscope_advices', list.innerHTML);
         input.value = "";
     }
 </script>
