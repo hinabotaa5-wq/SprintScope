@@ -2,22 +2,21 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>SprintScope - 陸上アドバイス掲示板</title>
+    <title>SprintScope - 保存機能付きアドバイス掲示板</title>
     <style>
+        /* 見た目を整えるCSS */
         body { font-family: sans-serif; background-color: #f4f4f4; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h1 { color: #e67e22; border-bottom: 2px solid #e67e22; }
         
-        /* 速度ボタンのデザイン */
         .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin: 0 2px; transition: 0.3s; }
         .btn-speed.active { background-color: #e67e22 !important; color: white; border-color: #d35400; font-weight: bold; }
 
-        /* 入力エリアのデザイン */
         .form-area { margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
         textarea { width: 100%; height: 100px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; padding: 10px; box-sizing: border-box; }
         .btn-orange { background: #e67e22; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; }
         
-        /* ★届いたアドバイスのリスト用デザイン */
+        /* 届いたアドバイスのデザイン */
         #advice-list li { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
@@ -54,7 +53,15 @@
 </div>
 
 <script>
-    // 【機能A】速度を変える魔法
+    // 【A】ページ読み込み時に保存データを復活させる
+    window.onload = function() {
+        const saved = localStorage.getItem('myAdvices');
+        if (saved) {
+            document.getElementById('advice-list').innerHTML = saved;
+        }
+    };
+
+    // 【B】速度を変える魔法
     function changeSpeed(speed, element) {
         const video = document.getElementById('myVideo');
         video.playbackRate = speed;
@@ -63,29 +70,27 @@
         element.classList.add('active');
     }
 
-    // 【機能B】★アドバイスを下に表示する魔法
+    // 【C】アドバイスを送信して保存する魔法
     function sendAdvice() {
-        // ① 入力欄から文字を読み取る
         const input = document.getElementById('advice-input');
         const text = input.value;
 
-        // ② もし空っぽなら「書いて！」と教えてあげる
         if (text.trim() === "") {
             alert("アドバイスを入力してください！");
             return;
         }
 
-        // ③ 掲示板（ul）を見つける
         const list = document.getElementById('advice-list');
-
-        // ④ 新しい「1行（li）」を作って、文字を入れる
         const newLi = document.createElement('li');
         newLi.innerHTML = `<strong>🏃‍♂️ コーチの助言:</strong><br>${text}`;
 
-        // ⑤ 掲示板の一番上に追加する（最新が上にくるように prepend）
+        // 掲示板の先頭に追加
         list.prepend(newLi);
 
-        // ⑥ 書き終わったら入力欄を真っ白にする
+        // ★今の掲示板の中身を丸ごとブラウザに保存！
+        localStorage.setItem('myAdvices', list.innerHTML);
+
+        // 入力欄をクリア
         input.value = "";
     }
 </script>
