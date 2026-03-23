@@ -3,86 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SprintScope - ホーム & 分析</title>
+    <title>SprintScope - タブ機能付き</title>
     <style>
         /* 基本デザイン */
-        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; padding-bottom: 50px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        h1 { color: #e67e22; text-align: center; }
+        h1 { color: #e67e22; text-align: center; margin-bottom: 10px; }
 
-        /* ホーム画面：動画グリッド */
-        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .video-card { background: #eee; border-radius: 8px; overflow: hidden; cursor: pointer; text-align: center; transition: 0.3s; }
-        .video-card:hover { transform: scale(1.02); }
+        /* --- 【新機能】タブメニューのデザイン --- */
+        .tab-menu { display: flex; justify-content: center; gap: 20px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
+        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; color: #999; transition: 0.3s; }
+        .tab-btn.active { color: #e67e22; font-weight: bold; border-bottom: 3px solid #e67e22; }
+
+        /* 動画グリッドとカード */
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .video-card { background: #eee; border-radius: 8px; overflow: hidden; cursor: pointer; text-align: center; }
         .thumbnail { background: #333; color: white; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2em; }
         .video-card p { padding: 10px; font-size: 0.8em; margin: 0; font-weight: bold; }
 
-        /* 分析画面：動画とボタン */
-        .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin: 0 2px; }
-        .btn-speed.active { background-color: #e67e22 !important; color: white; border-color: #d35400; font-weight: bold; }
+        /* 分析画面のパーツ */
+        .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        .btn-speed.active { background-color: #e67e22; color: white; }
         .btn-orange { background: #e67e22; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
         .btn-back { background: #95a5a6; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
 
         /* アドバイス掲示板 */
         #advice-list { padding: 0; list-style: none; }
-        #advice-list li { background: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; font-size: 0.9em; }
-        textarea { width: 100%; height: 80px; padding: 10px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; }
+        #advice-list li { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 0.9em; }
+        textarea { width: 100%; height: 80px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="home-screen" class="container">
+<div id="main-container" class="container">
     <h1>SprintScope</h1>
-    <p style="text-align: center; color: #666;">分析する動画を選択</p>
-    <div class="video-grid">
-        <div class="video-card" onclick="openAnalysis('IMG_4277.MOV', '3/21 100m走')">
-            <div class="thumbnail">🏃‍♂️</div>
-            <p>3/21 100m走</p>
-        </div>
-        <div class="video-card" onclick="openAnalysis('IMG_SAMPLE.MP4', 'スタート練習')">
-            <div class="thumbnail">🔥</div>
-            <p>スタート練習</p>
-        </div>
-    </div>
-</div>
 
-<div id="analysis-screen" class="container" style="display:none;">
-    <button class="btn-back" onclick="backToHome()">← 戻る</button>
-    <h2 id="current-title" style="font-size: 1.2em; color: #333;">動画分析</h2>
-
-    <video id="myVideo" controls width="100%" style="border-radius: 8px;">
-        <source src="" type="video/mp4">
-    </video>
-
-    <div style="text-align: center; margin: 15px 0;">
-        <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
-        <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
-        <button class="btn-speed" onclick="changeSpeed(2.0, this)">2.0x</button>
+    <div id="top-tabs" class="tab-menu">
+        <button class="tab-btn active" onclick="switchTab('home')">ホーム</button>
+        <button class="tab-btn" onclick="switchTab('upload')">投稿</button>
     </div>
 
-    <div class="form-area">
-        <textarea id="advice-input" placeholder="分析結果をメモ..."></textarea>
+    <div id="home-screen">
+        <div class="video-grid">
+            <div class="video-card" onclick="openAnalysis('IMG_4277.MOV', '3/21 100m走')">
+                <div class="thumbnail">🏃‍♂️</div>
+                <p>3/21 100m走</p>
+            </div>
+            <div class="video-card" onclick="openAnalysis('IMG_SAMPLE.MP4', 'スタート練習')">
+                <div class="thumbnail">🔥</div>
+                <p>スタート練習</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="upload-screen" style="display: none;">
+        <div style="text-align: center; padding: 20px;">
+            <p>分析したい動画をアルバムから選択</p>
+            <input type="file" id="video-file-input" accept="video/*" style="margin: 20px 0;">
+            <button class="btn-orange" onclick="alert('アップロード機能は作成中！')">投稿する</button>
+        </div>
+    </div>
+
+    <div id="analysis-screen" style="display: none;">
+        <button class="btn-back" onclick="backToHome()">← 戻る</button>
+        <h2 id="current-title" style="font-size: 1.1em;">動画分析</h2>
+        
+        <video id="myVideo" controls width="100%" style="border-radius: 8px;"></video>
+
+        <div style="text-align: center; margin: 15px 0;">
+            <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
+            <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
+            <button class="btn-speed" onclick="changeSpeed(2.0, this)">2.0x</button>
+        </div>
+
+        <textarea id="advice-input" placeholder="接地が遅い、腕の振りが横に流れる...など"></textarea>
         <button class="btn-orange" onclick="sendAdvice()">分析を保存</button>
-    </div>
 
-    <div style="margin-top: 20px;">
-        <h3 style="font-size: 1em; border-left: 4px solid #e67e22; padding-left: 10px;">この動画のアドバイス</h3>
+        <h3 style="font-size: 1em; margin-top: 20px; border-left: 4px solid #e67e22; padding-left: 10px;">アドバイス履歴</h3>
         <ul id="advice-list"></ul>
     </div>
 </div>
 
 <script>
-    // 1. ページ読み込み時の処理
-    window.onload = function() {
-        const saved = localStorage.getItem('sprintscope_advices');
-        if (saved) {
-            document.getElementById('advice-list').innerHTML = saved;
-        }
-    };
+    // --- 1. タブを切り替える魔法 ---
+    function switchTab(tabName) {
+        // ボタンの見た目を切り替え
+        const buttons = document.querySelectorAll('.tab-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
 
-    // 2. 画面切り替え：ホーム → 分析
+        // 画面の中身を切り替え
+        if (tabName === 'home') {
+            document.getElementById('home-screen').style.display = 'block';
+            document.getElementById('upload-screen').style.display = 'none';
+            document.getElementById('analysis-screen').style.display = 'none';
+        } else if (tabName === 'upload') {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('upload-screen').style.display = 'block';
+            document.getElementById('analysis-screen').style.display = 'none';
+        }
+    }
+
+    // --- 2. 分析画面を開く魔法 ---
     function openAnalysis(file, title) {
         document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('top-tabs').style.display = 'none'; // タブも隠す
         document.getElementById('analysis-screen').style.display = 'block';
         
         document.getElementById('current-title').innerText = title;
@@ -91,35 +116,38 @@
         video.load();
     }
 
-    // 3. 画面切り替え：分析 → ホーム
+    // --- 3. ホームに戻る魔法 ---
     function backToHome() {
         document.getElementById('home-screen').style.display = 'block';
+        document.getElementById('top-tabs').style.display = 'flex'; // タブを復活
         document.getElementById('analysis-screen').style.display = 'none';
     }
 
-    // 4. 速度変更
+    // --- 4. 速度変更の魔法 ---
     function changeSpeed(speed, element) {
-        const video = document.getElementById('myVideo');
-        video.playbackRate = speed;
-        const buttons = document.querySelectorAll('.btn-speed');
-        buttons.forEach(btn => btn.classList.remove('active'));
+        document.getElementById('myVideo').playbackRate = speed;
+        document.querySelectorAll('.btn-speed').forEach(btn => btn.classList.remove('active'));
         element.classList.add('active');
     }
 
-    // 5. アドバイス送信と保存
+    // --- 5. アドバイス保存の魔法 ---
     function sendAdvice() {
         const input = document.getElementById('advice-input');
         if (input.value.trim() === "") return;
 
-        const list = document.getElementById('advice-list');
         const li = document.createElement('li');
-        const now = new Date();
-        li.innerHTML = `<small>${now.toLocaleString()}</small><br>${input.value}`;
-        list.prepend(li);
+        li.innerHTML = `<small>${new Date().toLocaleString()}</small><br>${input.value}`;
+        document.getElementById('advice-list').prepend(li);
 
-        localStorage.setItem('sprintscope_advices', list.innerHTML);
+        localStorage.setItem('sprintscope_advices', document.getElementById('advice-list').innerHTML);
         input.value = "";
     }
+
+    // 読み込み時に保存したアドバイスを出す
+    window.onload = function() {
+        const saved = localStorage.getItem('sprintscope_advices');
+        if (saved) document.getElementById('advice-list').innerHTML = saved;
+    };
 </script>
 
 </body>
