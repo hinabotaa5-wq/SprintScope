@@ -3,42 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SprintScope - 短距離分析アプリ</title>
+    <title>SprintScope - Cloud Sync版</title>
     <style>
-        /* --- デザイン担当（CSS） --- */
+        /* デザイン（CSS） */
         body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; padding-bottom: 70px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         h1 { color: #e67e22; text-align: center; margin-bottom: 10px; }
         
-        /* タブメニュー */
         .tab-menu { display: flex; justify-content: center; gap: 20px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
-        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; color: #999; transition: 0.3s; }
+        .tab-btn { background: none; border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; color: #999; }
         .tab-btn.active { color: #e67e22; font-weight: bold; border-bottom: 3px solid #e67e22; }
 
-        /* 投稿フォームの入力欄 */
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; color: #555; }
-        input[type="file"], input[type="number"], select, textarea { 
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; 
-        }
-        textarea { height: 80px; }
-
-        /* 動画一覧（ホーム） */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .video-card { background: #eee; border-radius: 8px; overflow: hidden; cursor: pointer; text-align: center; transition: 0.3s; }
-        .video-card:hover { transform: scale(1.02); }
-        .thumbnail { background: #333; color: white; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2em; }
-        .video-card p { padding: 10px; font-size: 0.8em; margin: 0; font-weight: bold; }
-
-        /* ボタン・装飾 */
+        .video-card { background: #eee; border-radius: 8px; cursor: pointer; text-align: center; padding-bottom: 10px; }
+        .thumbnail { background: #333; color: white; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 2em; border-radius: 8px 8px 0 0; }
+        
         .btn-orange { background: #e67e22; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
-        .btn-orange:hover { background-color: #d35400; }
+        .btn-orange:disabled { background: #ccc; cursor: not-allowed; }
         .btn-back { background: #95a5a6; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
         .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
-        .btn-speed.active { background-color: #e67e22; color: white; border-color: #d35400; }
-        
-        #advice-list { padding: 0; list-style: none; }
-        #advice-list li { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; margin-bottom: 8px; border-radius: 5px; font-size: 0.9em; }
+        .btn-speed.active { background-color: #e67e22; color: white; }
     </style>
 </head>
 <body>
@@ -52,13 +40,8 @@
     </div>
 
     <div id="home-screen">
-        <p style="text-align: center; color: #666;">分析する動画を選択</p>
         <div class="video-grid" id="main-grid">
-            <div class="video-card" onclick="openAnalysis('sample.mp4', '3/21 100m走')">
-                <div class="thumbnail">🏃‍♂️</div>
-                <p>3/21 100m走</p>
             </div>
-        </div>
     </div>
 
     <div id="upload-screen" style="display: none;">
@@ -66,7 +49,6 @@
             <label>動画を選択 (必須)：</label>
             <input type="file" id="video-file-input" accept="video/*">
         </div>
-
         <div class="input-group">
             <label>分析したい局面 (必須)：</label>
             <select id="sprint-phase">
@@ -76,134 +58,157 @@
                 <option value="ラスト">ラスト</option>
             </select>
         </div>
-
         <div class="input-group">
             <label>自己ベスト (任意)：</label>
-            <input type="number" id="pb-time" step="0.01" min="0" placeholder="例: 10.85">
+            <input type="number" id="pb-time" step="0.01" min="0" placeholder="10.85">
         </div>
-
         <div class="input-group">
             <label>聞きたいこと (必須)：</label>
-            <textarea id="user-question" placeholder="接地を短くしたい、前傾を維持したい...など"></textarea>
+            <textarea id="user-question"></textarea>
         </div>
-
-        <button class="btn-orange" onclick="submitPost()">投稿する</button>
+        <button class="btn-orange" id="submit-btn" onclick="submitPost()">クラウドに投稿する</button>
+        <p id="loading-msg" style="display:none; text-align:center; color: #e67e22;">アップロード中...（数秒かかります）</p>
     </div>
 
     <div id="analysis-screen" style="display: none;">
         <button class="btn-back" onclick="backToHome()">← 戻る</button>
-        <h2 id="current-title" style="font-size: 1.1em; color: #333;">動画分析</h2>
-        
-        <video id="myVideo" controls width="100%" style="border-radius: 8px; background: #000;"></video>
-
+        <h2 id="current-title" style="font-size: 1.1em;">動画分析</h2>
+        <video id="myVideo" controls width="100%" style="border-radius: 8px; background:#000;"></video>
         <div style="text-align: center; margin: 15px 0;">
             <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
             <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
-            <button class="btn-speed" onclick="changeSpeed(2.0, this)">2.0x</button>
         </div>
-
-        <div class="form-area">
-            <textarea id="advice-input" placeholder="分析結果をメモ..."></textarea>
-            <button class="btn-orange" onclick="sendAdvice()">分析を保存</button>
-        </div>
-
-        <h3 style="font-size: 1em; margin-top: 20px; border-left: 4px solid #e67e22; padding-left: 10px;">アドバイス履歴</h3>
-        <ul id="advice-list"></ul>
+        <textarea id="advice-input" placeholder="メモを入力..."></textarea>
+        <button class="btn-orange" onclick="sendAdvice()">保存</button>
+        <ul id="advice-list" style="padding:0; list-style:none; margin-top:20px;"></ul>
     </div>
 </div>
 
 <script>
-    // --- 魔法の杖：画面切り替え ---
-    function switchTab(tabName) {
-        // 全ボタンから active を消す（全消しリセット）
-        const buttons = document.querySelectorAll('.tab-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
-        
-        // 押されたボタンに active をつける
-        if(event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
-        }
+    const CLOUD_NAME = "doipeut1j"; 
+    const UPLOAD_PRESET = "sprint_preset"; // Unsignedのもの
 
-        // 画面の出し分け（三項演算子）
+    // 1. タブ切り替え
+    function switchTab(tabName) {
+        const btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(b => b.classList.remove('active'));
+        if(event && event.currentTarget) event.currentTarget.classList.add('active');
+
         document.getElementById('home-screen').style.display = tabName === 'home' ? 'block' : 'none';
         document.getElementById('upload-screen').style.display = tabName === 'upload' ? 'block' : 'none';
         document.getElementById('analysis-screen').style.display = 'none';
         document.getElementById('top-tabs').style.display = 'flex';
     }
 
-    // --- 魔法の杖：投稿バリデーション ---
-    function submitPost() {
+    // 2. クラウド投稿（ここが進化ポイント！）
+    async function submitPost() {
         const fileInput = document.getElementById('video-file-input');
         const phase = document.getElementById('sprint-phase').value;
         const pb = document.getElementById('pb-time').value;
         const question = document.getElementById('user-question').value;
 
-        // 【最強の門番】 || (または) で条件を繋ぐ
         if (!fileInput.files[0] || phase === "" || question.trim() === "") {
-            alert("「動画」「局面」「聞きたいこと」は必須です！");
+            alert("必須項目を埋めてください！");
             return;
         }
 
-        // ホーム画面にカードを追加
-        const grid = document.getElementById('main-grid');
-        const newCard = document.createElement('div');
-        newCard.className = 'video-card';
-        
-        // 投稿された局面とPBを表示
-        const pbDisplay = pb ? `${pb}s` : '--.--';
-        const title = `【${phase}】依頼 (${pbDisplay})`;
-        
-        newCard.innerHTML = `<div class="thumbnail">⚡</div><p>${title}</p>`;
-        
-        // カードをクリックした時の動きもセット（今はアラートだけ）
-        newCard.onclick = function() { alert("この動画の分析を開始します（実装中）"); };
+        // ボタンを無効化して「待ち」を作る
+        document.getElementById('submit-btn').disabled = true;
+        document.getElementById('loading-msg').style.display = 'block';
 
-        grid.prepend(newCard); // 最新を一番上に！
-        
-        alert("投稿が完了しました！");
-        switchTab('home'); // 自動でホームへ移動
+        // クラウドへ送る準備
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_preset', UPLOAD_PRESET);
+
+        try {
+            // クラウドへ送信
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            const videoUrl = data.secure_url; // クラウド上の動画URL！
+
+            // 成功したらデータを保存
+            const postData = {
+                url: videoUrl,
+                title: `【${phase}】(${pb || '--.--'}s)`,
+                question: question,
+                date: new Date().toLocaleString()
+            };
+
+            saveToStorage(postData);
+            renderHome(); // ホームを更新
+            alert("クラウド保存完了！");
+            switchTab('home');
+
+        } catch (e) {
+            alert("通信エラー：設定を確認してください。");
+        } finally {
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('loading-msg').style.display = 'none';
+        }
     }
 
-    // --- 魔法の杖：分析画面 ---
-    function openAnalysis(src, title) {
+    // 3. データの永続化（ブラウザのロッカーにURLをメモ）
+    function saveToStorage(newPost) {
+        const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
+        posts.unshift(newPost); // 先頭に追加
+        localStorage.setItem('sprint_posts', JSON.stringify(posts));
+    }
+
+    // 4. ホーム画面の描画（読み込み時に呼び出す）
+    function renderHome() {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = ""; // 一旦空にする
+        const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
+
+        posts.forEach(post => {
+            const card = document.createElement('div');
+            card.className = 'video-card';
+            card.onclick = () => openAnalysis(post.url, post.title);
+            card.innerHTML = `<div class="thumbnail">⚡</div><p>${post.title}</p>`;
+            grid.appendChild(card);
+        });
+    }
+
+    // 5. 分析画面の処理
+    function openAnalysis(url, title) {
         document.getElementById('home-screen').style.display = 'none';
         document.getElementById('upload-screen').style.display = 'none';
         document.getElementById('top-tabs').style.display = 'none';
         document.getElementById('analysis-screen').style.display = 'block';
 
         document.getElementById('current-title').innerText = title;
-        document.getElementById('myVideo').src = src;
+        document.getElementById('myVideo').src = url;
     }
 
-    function backToHome() {
-        switchTab('home');
+    function backToHome() { switchTab('home'); }
+
+    function changeSpeed(s, el) {
+        document.getElementById('myVideo').playbackRate = s;
+        document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
     }
 
-    function changeSpeed(speed, element) {
-        document.getElementById('myVideo').playbackRate = speed;
-        document.querySelectorAll('.btn-speed').forEach(btn => btn.classList.remove('active'));
-        element.classList.add('active');
-    }
-
-    // --- 魔法の杖：記憶（localStorage） ---
+    // アドバイス保存（これまで通り）
     function sendAdvice() {
         const input = document.getElementById('advice-input');
-        if (input.value.trim() === "") return; // 門番
-
+        if (input.value.trim() === "") return;
         const list = document.getElementById('advice-list');
         const li = document.createElement('li');
         li.innerHTML = `<small>${new Date().toLocaleString()}</small><br>${input.value}`;
         list.prepend(li);
-
-        // 'sprint_memo' というロッカーに保存
         localStorage.setItem('sprint_memo', list.innerHTML);
         input.value = "";
     }
 
-    // ページ読み込み時にロッカーから取り出す
+    // 起動時の復元
     window.onload = function() {
-        const saved = localStorage.getItem('sprint_memo');
-        if (saved) document.getElementById('advice-list').innerHTML = saved;
+        renderHome();
+        const savedMemo = localStorage.getItem('sprint_memo');
+        if (savedMemo) document.getElementById('advice-list').innerHTML = savedMemo;
     };
 </script>
 
