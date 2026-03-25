@@ -9,7 +9,6 @@
         body { font-family: sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; padding-bottom: 70px; }
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* ヘッダー */
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         h1 { color: #e67e22; margin: 0; font-size: 1.5em; }
         .profile-icon { background: #eee; border: none; font-size: 1.5em; cursor: pointer; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; }
@@ -22,16 +21,20 @@
         .input-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9em; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
         
-        /* カードデザイン */
         .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .video-card { background: #eee; border-radius: 8px; cursor: pointer; text-align: center; padding-bottom: 10px; overflow: hidden; transition: 0.2s; }
+        .video-card { position: relative; background: #eee; border-radius: 8px; cursor: pointer; text-align: center; padding-bottom: 10px; overflow: hidden; transition: 0.2s; }
         .video-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .thumbnail { background: #333; color: white; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; }
         
+        /* ゴミ箱ボタンのスタイル */
+        .del-btn { position: absolute; top: 5px; right: 5px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: #e74c3c; z-index: 10; }
+        .del-btn:hover { background: #e74c3c; color: white; }
+
         .btn-orange { background: #e67e22; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; }
         .btn-back { background: #95a5a6; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; margin-bottom: 10px; }
         .btn-speed { background: #eee; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
         .btn-speed.active { background-color: #e67e22; color: white; }
+        .advice-box { background:#fff9f0; padding:15px; border-left:5px solid #e67e22; border-radius:5px; margin-top:15px; text-align: left; }
     </style>
 </head>
 <body>
@@ -65,8 +68,8 @@
             </select>
         </div>
         <div class="input-group">
-            <label>聞きたいこと：</label>
-            <textarea id="user-question" placeholder="課題を入力..."></textarea>
+            <label>聞きたいこと（課題）：</label>
+            <textarea id="user-question" placeholder="例：接地が長い気がします..."></textarea>
         </div>
         <button class="btn-orange" id="submit-btn" onclick="submitPost()">クラウドに投稿する</button>
         <p id="loading-msg" style="display:none; text-align:center; color: #e67e22;">アップロード中...</p>
@@ -75,8 +78,7 @@
     <div id="profile-screen" style="display: none;">
         <button class="btn-back" onclick="switchTab('home')">← 戻る</button>
         <h2 style="text-align:center; color:#e67e22; margin-bottom:10px;">選手プロフィール</h2>
-        
-        <div class="section-title">これまでの練習動画</div>
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 0.9em;">これまでの練習動画</div>
         <div id="profile-video-list" class="video-grid" style="margin-bottom: 25px;"></div>
     </div>
 
@@ -87,6 +89,10 @@
         <div style="text-align: center; margin: 15px 0;">
             <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
             <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
+        </div>
+        <div class="advice-box">
+            <strong style="color:#e67e22; font-size:0.8em;">💬 あなたの課題・質問</strong>
+            <p id="display-question" style="margin:8px 0 0 0; font-size:0.95em; color:#333; line-height:1.5;"></p>
         </div>
     </div>
 </div>
@@ -105,8 +111,6 @@
         if(tabName === 'upload') document.getElementById('tab-btn-upload').classList.add('active');
 
         document.getElementById('top-tabs').style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
-
-        // 画面を切り替えるたびに最新データを描画
         renderVideos();
     }
 
@@ -131,8 +135,10 @@
             const data = await response.json();
             
             const postData = {
+                id: Date.now(), // 削除用に一意のIDを追加
                 url: data.secure_url,
                 title: `【${phase}】 ${new Date().toLocaleDateString()}`,
+                question: question || "（質問なし）",
                 date: new Date().getTime()
             };
 
@@ -151,29 +157,58 @@
         }
     }
 
+    function deleteVideo(id, event) {
+        event.stopPropagation(); // 親（カード全体）のクリックイベントを発火させない
+        if (!confirm("この練習動画を削除しますか？")) return;
+
+        let posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
+        posts = posts.filter(post => post.id !== id);
+        localStorage.setItem('sprint_posts', JSON.stringify(posts));
+        renderVideos();
+    }
+
     function renderVideos() {
         const grid = document.getElementById('main-grid');
         const profGrid = document.getElementById('profile-video-list');
+        if (!grid || !profGrid) return;
+
         grid.innerHTML = "";
         profGrid.innerHTML = "";
         
         const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
 
         posts.forEach(post => {
+            // 基本のカード作成
             const card = document.createElement('div');
             card.className = 'video-card';
             card.innerHTML = `<div class="thumbnail">⚡</div><p style="font-size:0.8em; margin:5px 0;">${post.title}</p>`;
 
-            card.onclick = () => {
+            const goAnalysis = () => {
                 switchTab('analysis');
                 document.getElementById('current-title').innerText = post.title;
+                document.getElementById('display-question').innerText = post.question;
                 const video = document.getElementById('myVideo');
                 video.src = post.url;
+                video.playbackRate = 1.0;
             };
 
-            // ホームとプロフィールの両方にカードを入れる
-            grid.appendChild(card.cloneNode(true)).onclick = card.onclick;
-            profGrid.appendChild(card.cloneNode(true)).onclick = card.onclick;
+            // 1. ホーム画面用（削除ボタンなし）
+            const homeCard = card.cloneNode(true);
+            homeCard.onclick = goAnalysis;
+            grid.appendChild(homeCard);
+
+            // 2. プロフィール画面用（削除ボタンあり）
+            const profCard = card.cloneNode(true);
+            profCard.onclick = goAnalysis;
+            
+            // ゴミ箱ボタンを追加
+            const delBtn = document.createElement('button');
+            delBtn.className = 'del-btn';
+            delBtn.innerHTML = '×';
+            delBtn.onclick = (e) => deleteVideo(post.id, e);
+            profCard.appendChild(delBtn);
+
+            profGrid.appendChild(profCard);
         });
     }
 
@@ -183,7 +218,7 @@
         el.classList.add('active');
     }
 
-    window.onload = rederVideos;
+    window.onload = renderVideos;
 </script>
 </body>
 </html>
