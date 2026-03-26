@@ -97,11 +97,47 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDFxbyaB9H-Zadg5FvRjxufg2eibVNw3vA",
+        authDomain: "sprintscope-e8ef7.firebaseapp.com",
+        projectId: "sprintscope-e8ef7",
+        storageBucket: "sprintscope-e8ef7.firebasestorage.app",
+        messagingSenderId: "585818029718",
+        appId: "1:585818029718:web:dd4d9190027289d4b64cb7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
     const CLOUD_NAME = "doipeut1j"; 
     const UPLOAD_PRESET = "sprint_preset"; 
 
-    function switchTab(tabName) {
+ window.switchTab = async function(tabName) {
+        // もし「投稿」タブが押されたらログインチェック
+        if (tabName === 'upload') {
+            const user = auth.currentUser;
+            if (!user) {
+                // ログインしていなければGoogleログイン画面を出す
+                const confirmed = confirm("投稿するにはログインが必要です。Googleでログインしますか？");
+                if (confirmed) {
+                    try {
+                        await signInWithPopup(auth, provider);
+                        // ログイン成功したらそのまま続行（下の表示処理へ）
+                    } catch (e) {
+                        alert("ログインに失敗しました");
+                        return; // 処理中断
+                    }
+                } else {
+                    return; // キャンセルなら何もしない
+                }
+            }
+        }
+
         const screens = ['home', 'upload', 'profile', 'analysis'];
         screens.forEach(s => document.getElementById(s + '-screen').style.display = 'none');
         document.getElementById(tabName + '-screen').style.display = 'block';
@@ -114,7 +150,7 @@
         renderVideos();
     }
 
-    async function submitPost() {
+    window.submitPost = async function() {
         const fileInput = document.getElementById('video-file-input');
         const phase = document.getElementById('sprint-phase').value;
         const question = document.getElementById('user-question').value;
@@ -135,7 +171,7 @@
             const data = await response.json();
             
             const postData = {
-                id: Date.now(), // 削除用に一意のIDを追加
+                id: Date.now(), 
                 url: data.secure_url,
                 title: `【${phase}】 ${new Date().toLocaleDateString()}`,
                 question: question || "（質問なし）",
@@ -157,8 +193,8 @@
         }
     }
 
-    function deleteVideo(id, event) {
-        event.stopPropagation(); // 親（カード全体）のクリックイベントを発火させない
+    window.deleteVideo = function(id, event) {
+        event.stopPropagation(); 
         if (!confirm("この練習動画を削除しますか？")) return;
 
         let posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
@@ -178,7 +214,7 @@
         const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
 
         posts.forEach(post => {
-            // 基本のカード作成
+            
             const card = document.createElement('div');
             card.className = 'video-card';
             card.innerHTML = `<div class="thumbnail">⚡</div><p style="font-size:0.8em; margin:5px 0;">${post.title}</p>`;
@@ -192,16 +228,13 @@
                 video.playbackRate = 1.0;
             };
 
-            // 1. ホーム画面用（削除ボタンなし）
             const homeCard = card.cloneNode(true);
             homeCard.onclick = goAnalysis;
             grid.appendChild(homeCard);
 
-            // 2. プロフィール画面用（削除ボタンあり）
             const profCard = card.cloneNode(true);
             profCard.onclick = goAnalysis;
-            
-            // ゴミ箱ボタンを追加
+
             const delBtn = document.createElement('button');
             delBtn.className = 'del-btn';
             delBtn.innerHTML = '×';
@@ -212,7 +245,7 @@
         });
     }
 
-    function changeSpeed(s, el) {
+    window.changeSpeed = function(s, el) {
         document.getElementById('myVideo').playbackRate = s;
         document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
