@@ -104,7 +104,9 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    // Firebaseの設定
     const firebaseConfig = {
         apiKey: "AIzaSyDFxbyaB9H-Zadg5FvRjxufg2eibVNw3vA",
         authDomain: "sprintscope-e8ef7.firebaseapp.com",
@@ -116,70 +118,48 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
     const provider = new GoogleAuthProvider();
 
-    // ログイン・ログアウトを一括で管理する関数
+    const CLOUD_NAME = "doipeut1j"; 
+    const UPLOAD_PRESET = "sprint_preset"; 
+
+    // --- 1. ログイン・ログアウト管理 ---
     window.handleAuth = async function() {
-        const user = auth.currentUser;
-        if (user) {
+        if (auth.currentUser) {
             if (confirm("ログアウトしますか？")) {
-                try {
-                    await signOut(auth);
-                    alert("ログアウトしました");
-                    location.reload();
-                } catch (e) {
-                    alert("ログアウトに失敗しました");
-                }
+                await signOut(auth);
+                location.reload();
             }
         } else {
             try {
                 await signInWithPopup(auth, provider);
-                alert("ログインしました！");
-            } catch (e) {
-                alert("ログインに失敗しました");
-            }
+            } catch (e) { alert("ログイン失敗"); }
         }
     }
 
-    // 状態を常に監視してボタンの見た目を更新
     onAuthStateChanged(auth, (user) => {
         const authBtn = document.getElementById('auth-btn');
-        authBtn.style.display = 'block'; // 常に表示
         if (user) {
             authBtn.innerText = "ログアウト";
-            authBtn.style.background = "#95a5a6"; // ログアウト時はグレー
+            authBtn.style.background = "#95a5a6";
         } else {
             authBtn.innerText = "ログイン";
-            authBtn.style.background = "#e67e22"; // ログイン前はオレンジ
+            authBtn.style.background = "#e67e22";
         }
+        renderVideos(); // ログイン状態が変わったら画面を更新
     });
-        
-    const CLOUD_NAME = "doipeut1j"; 
-    const UPLOAD_PRESET = "sprint_preset"; 
 
+    // --- 2. タブ切り替え ---
     window.switchTab = async function(tabName) {
-        if (tabName === 'upload') {
-            const user = auth.currentUser;
-            if (!user) {
-                const confirmed = confirm("投稿するにはログインが必要です。Googleでログインしますか？");
-                if (confirmed) {
-                    try {
-                        await signInWithPopup(auth, provider);
-                    } catch (e) {
-                        alert("ログインに失敗しました");
-                        return;
-                    }
-                } else {
-                    return;
-                }
-            }
+        if (tabName === 'upload' && !auth.currentUser) {
+            if (confirm("投稿にはログインが必要です。ログインしますか？")) {
+                await signInWithPopup(auth, provider);
+            } else { return; }
         }
 
         const screens = ['home', 'upload', 'profile', 'analysis'];
-        screens.forEach(s => {
-            const el = document.getElementById(s + '-screen');
-            if(el) el.style.display = 'none';
-        });
+        screens.forEach(s => document.getElementById(s + '-screen').style.display = 'none');
         document.getElementById(tabName + '-screen').style.display = 'block';
 
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -188,15 +168,18 @@
 
         const topTabs = document.getElementById('top-tabs');
         if(topTabs) topTabs.style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
+        
         renderVideos();
     }
 
+    // --- 3. 投稿機能（Cloudinary + Firestore） ---
     window.submitPost = async function() {
         const fileInput = document.getElementById('video-file-input');
         const phase = document.getElementById('sprint-phase').value;
         const question = document.getElementById('user-question').value;
+        const user = auth.currentUser;
 
-        if (!fileInput.files[0]) { alert("動画を選んでください！"); return; }
+        if (!user || !fileInput.files[0]) { alert("動画とログインが必要です"); return; }
 
         document.getElementById('submit-btn').disabled = true;
         document.getElementById('loading-msg').style.display = 'block';
@@ -211,80 +194,102 @@
             });
             const data = await response.json();
             
-            const postData = {
-                id: Date.now(), 
+            await addDoc(collection(db, "posts"), {
                 url: data.secure_url,
                 title: `【${phase}】 ${new Date().toLocaleDateString()}`,
                 question: question || "（質問なし）",
-                date: new Date().getTime()
-            };
+                userId: user.uid,
+                userName: user.displayName,
+                createdAt: new Date()
+            });
 
-            const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
-            posts.unshift(postData);
-            localStorage.setItem('sprint_posts', JSON.stringify(posts));
-
-            fileInput.value = "";
+            alert("投稿完了！");
             document.getElementById('user-question').value = "";
+            document.getElementById('video-file-input').value = "";
             switchTab('home');
         } catch (e) {
+            console.error(e);
             alert("アップロード失敗");
         } finally {
             document.getElementById('submit-btn').disabled = false;
             document.getElementById('loading-msg').style.display = 'none';
         }
-    }
+    };
 
-    window.deleteVideo = function(id, event) {
-        event.stopPropagation(); 
-        if (!confirm("この練習動画を削除しますか？")) return;
-
-        let posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
-        posts = posts.filter(post => post.id !== id);
-        localStorage.setItem('sprint_posts', JSON.stringify(posts));
-        renderVideos();
-    }
-
-    function renderVideos() {
+    // --- 4. 動画一覧の描画（ホーム & プロフィール） ---
+    async function renderVideos() {
         const grid = document.getElementById('main-grid');
         const profGrid = document.getElementById('profile-video-list');
-        if (!grid || !profGrid) return;
+        const user = auth.currentUser;
 
-        grid.innerHTML = "";
-        profGrid.innerHTML = "";
-        
-        const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
+        if (grid) grid.innerHTML = "読み込み中...";
+        if (profGrid) profGrid.innerHTML = "";
 
-        posts.forEach(post => {
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            card.innerHTML = `<div class="thumbnail">⚡</div><p style="font-size:0.8em; margin:5px 0;">${post.title}</p>`;
+        try {
+            const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+            const querySnapshot = await getDocs(q);
+            
+            if (grid) grid.innerHTML = "";
 
-            const goAnalysis = () => {
-                switchTab('analysis');
-                document.getElementById('current-title').innerText = post.title;
-                document.getElementById('display-question').innerText = post.question;
-                const video = document.getElementById('myVideo');
-                video.src = post.url;
-                video.playbackRate = 1.0;
-            };
+            querySnapshot.forEach((docSnap) => {
+                const post = docSnap.data();
+                const id = docSnap.id;
 
-            const homeCard = card.cloneNode(true);
-            homeCard.onclick = goAnalysis;
-            grid.appendChild(homeCard);
+                // 分析画面を開く処理を共通化
+                const openAnalysis = () => {
+                    window.currentPostId = id;
+                    switchTab('analysis');
+                    document.getElementById('current-title').innerText = post.title;
+                    document.getElementById('display-question').innerText = post.question;
+                    const video = document.getElementById('myVideo');
+                    video.src = post.url;
+                    video.load();
+                };
 
-            const profCard = card.cloneNode(true);
-            profCard.onclick = goAnalysis;
+                // ホーム用カード
+                const homeCard = document.createElement('div');
+                homeCard.className = 'video-card';
+                homeCard.innerHTML = `<div class="thumbnail">⚡</div><p>${post.title}</p>`;
+                homeCard.onclick = openAnalysis;
+                if (grid) grid.appendChild(homeCard);
 
-            const delBtn = document.createElement('button');
-            delBtn.className = 'del-btn';
-            delBtn.innerHTML = '×';
-            delBtn.onclick = (e) => deleteVideo(post.id, e);
-            profCard.appendChild(delBtn);
+                // プロフィール用カード（自分の投稿のみ）
+                if (profGrid && user && post.userId === user.uid) {
+                    const profCard = document.createElement('div');
+                    profCard.className = 'video-card';
+                    profCard.style.position = "relative"; // ×ボタンの基準点
+                    profCard.innerHTML = `<div class="thumbnail">⚡</div><p>${post.title}</p>`;
+                    profCard.onclick = openAnalysis;
 
-            profGrid.appendChild(profCard);
-        });
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'del-btn';
+                    delBtn.innerHTML = '×';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation(); // 分析画面が開くのを防ぐ
+                        deleteVideo(id);
+                    };
+                    profCard.appendChild(delBtn);
+                    profGrid.appendChild(profCard);
+                }
+            });
+        } catch (e) {
+            console.error("データ取得エラー:", e);
+        }
     }
 
+    // --- 5. 削除機能 ---
+    window.deleteVideo = async function(id) {
+        if (!confirm("この練習動画を削除しますか？")) return;
+        try {
+            await deleteDoc(doc(db, "posts", id));
+            alert("削除しました");
+            renderVideos();
+        } catch (e) {
+            alert("削除に失敗しました");
+        }
+    }
+
+    // --- 6. 再生速度の変更 ---
     window.changeSpeed = function(s, el) {
         document.getElementById('myVideo').playbackRate = s;
         document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
@@ -293,5 +298,3 @@
 
     window.onload = renderVideos;
 </script>
-</body>
-</html>
