@@ -11,6 +11,8 @@
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         h1 { color: #e67e22; margin: 0; font-size: 1.5em; }
+        .btn-logout {background: #95a5a6;color: white;border: none;padding: 5px 15px;border-radius: 5px;cursor: pointer;font-size: 0.8em;}
+        .btn-logout:hover {background: #7f8c8d;}
         .profile-icon { background: #eee; border: none; font-size: 1.5em; cursor: pointer; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; }
 
         .tab-menu { display: flex; justify-content: center; gap: 20px; border-bottom: 2px solid #eee; margin-bottom: 20px; }
@@ -26,7 +28,6 @@
         .video-card:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .thumbnail { background: #333; color: white; height: 80px; display: flex; align-items: center; justify-content: center; font-size: 1.5em; }
         
-        /* ゴミ箱ボタンのスタイル */
         .del-btn { position: absolute; top: 5px; right: 5px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: #e74c3c; z-index: 10; }
         .del-btn:hover { background: #e74c3c; color: white; }
 
@@ -42,7 +43,10 @@
 <div class="container">
     <div class="header">
         <h1>SprintScope</h1>
-        <button class="profile-icon" onclick="switchTab('profile')">👤</button>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="auth-btn" class="btn-logout" onclick="handleAuth()">ログイン</button>
+            <button class="profile-icon" onclick="switchTab('profile')">👤</button>
+        </div>
     </div>
 
     <div id="top-tabs" class="tab-menu">
@@ -99,8 +103,8 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    
     const firebaseConfig = {
         apiKey: "AIzaSyDFxbyaB9H-Zadg5FvRjxufg2eibVNw3vA",
         authDomain: "sprintscope-e8ef7.firebaseapp.com",
@@ -114,39 +118,76 @@
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
 
+    // ログイン・ログアウトを一括で管理する関数
+    window.handleAuth = async function() {
+        const user = auth.currentUser;
+        if (user) {
+            if (confirm("ログアウトしますか？")) {
+                try {
+                    await signOut(auth);
+                    alert("ログアウトしました");
+                    location.reload();
+                } catch (e) {
+                    alert("ログアウトに失敗しました");
+                }
+            }
+        } else {
+            try {
+                await signInWithPopup(auth, provider);
+                alert("ログインしました！");
+            } catch (e) {
+                alert("ログインに失敗しました");
+            }
+        }
+    }
+
+    // 状態を常に監視してボタンの見た目を更新
+    onAuthStateChanged(auth, (user) => {
+        const authBtn = document.getElementById('auth-btn');
+        authBtn.style.display = 'block'; // 常に表示
+        if (user) {
+            authBtn.innerText = "ログアウト";
+            authBtn.style.background = "#95a5a6"; // ログアウト時はグレー
+        } else {
+            authBtn.innerText = "ログイン";
+            authBtn.style.background = "#e67e22"; // ログイン前はオレンジ
+        }
+    });
+        
     const CLOUD_NAME = "doipeut1j"; 
     const UPLOAD_PRESET = "sprint_preset"; 
 
- window.switchTab = async function(tabName) {
-        // もし「投稿」タブが押されたらログインチェック
+    window.switchTab = async function(tabName) {
         if (tabName === 'upload') {
             const user = auth.currentUser;
             if (!user) {
-                // ログインしていなければGoogleログイン画面を出す
                 const confirmed = confirm("投稿するにはログインが必要です。Googleでログインしますか？");
                 if (confirmed) {
                     try {
                         await signInWithPopup(auth, provider);
-                        // ログイン成功したらそのまま続行（下の表示処理へ）
                     } catch (e) {
                         alert("ログインに失敗しました");
-                        return; // 処理中断
+                        return;
                     }
                 } else {
-                    return; // キャンセルなら何もしない
+                    return;
                 }
             }
         }
 
         const screens = ['home', 'upload', 'profile', 'analysis'];
-        screens.forEach(s => document.getElementById(s + '-screen').style.display = 'none');
+        screens.forEach(s => {
+            const el = document.getElementById(s + '-screen');
+            if(el) el.style.display = 'none';
+        });
         document.getElementById(tabName + '-screen').style.display = 'block';
 
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         if(tabName === 'home') document.getElementById('tab-btn-home').classList.add('active');
         if(tabName === 'upload') document.getElementById('tab-btn-upload').classList.add('active');
 
-        document.getElementById('top-tabs').style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
+        const topTabs = document.getElementById('top-tabs');
+        if(topTabs) topTabs.style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
         renderVideos();
     }
 
@@ -214,7 +255,6 @@
         const posts = JSON.parse(localStorage.getItem('sprint_posts') || '[]');
 
         posts.forEach(post => {
-            
             const card = document.createElement('div');
             card.className = 'video-card';
             card.innerHTML = `<div class="thumbnail">⚡</div><p style="font-size:0.8em; margin:5px 0;">${post.title}</p>`;
