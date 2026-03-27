@@ -94,10 +94,11 @@
             <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
             <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
         </div>
-        <div class="advice-box">
-            <strong style="color:#e67e22; font-size:0.8em;">💬 あなたの課題・質問</strong>
-            <p id="display-question" style="margin:8px 0 0 0; font-size:0.95em; color:#333; line-height:1.5;"></p>
+        <div class="advice-box" style="margin-top: 20px;">
+            <textarea id="advise-input" placeholder="アドバイス・感想を入力" style="height: 80px;"></textarea>
+            <button class="btn-orange" onclick="postAdvice()" style="margin-top: 10px;">アドバイスを送る</button>
         </div>
+        <div id="comment-list" style="margin-top: 20px;"></div>
     </div>
 </div>
 
@@ -199,7 +200,6 @@
                 title: `【${phase}】 ${new Date().toLocaleDateString()}`,
                 question: question || "（質問なし）",
                 userId: user.uid,
-                userName: user.displayName,
                 createdAt: new Date()
             });
 
@@ -239,17 +239,17 @@
                 const openAnalysis = () => {
                     window.currentPostId = id;
                     switchTab('analysis');
-                    document.getElementById('current-title').innerText = post.title;
-                    document.getElementById('display-question').innerText = post.question;
+                    document.getElementById('current-title').innerText = post.question;
                     const video = document.getElementById('myVideo');
                     video.src = post.url;
                     video.load();
+                    renderComments(id);
                 };
 
                 // ホーム用カード
                 const homeCard = document.createElement('div');
                 homeCard.className = 'video-card';
-                homeCard.innerHTML = `<div class="thumbnail">⚡</div><p>${post.title}</p>`;
+                homeCard.innerHTML = `<div class="thumbnail"></div><p>${post.question}</p>`;
                 homeCard.onclick = openAnalysis;
                 if (grid) grid.appendChild(homeCard);
 
@@ -258,7 +258,7 @@
                     const profCard = document.createElement('div');
                     profCard.className = 'video-card';
                     profCard.style.position = "relative"; // ×ボタンの基準点
-                    profCard.innerHTML = `<div class="thumbnail">⚡</div><p>${post.title}</p>`;
+                    profCard.innerHTML = `<div class="thumbnail"></div><p>${post.question}</p>`;
                     profCard.onclick = openAnalysis;
 
                     const delBtn = document.createElement('button');
@@ -294,6 +294,56 @@
         document.getElementById('myVideo').playbackRate = s;
         document.querySelectorAll('.btn-speed').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
+    }
+
+    window.postAdvice = async function() {
+        const text = document.getElementById('advise-input').value;
+        const user = auth.currentUser;
+        const postId = window.currentPostId; // 今見ている動画のID
+
+        if (!user) { alert("ログインが必要です"); return; }
+        if (!text) { alert("内容を入力してください"); return; }
+
+        try {
+        // postsコレクションの中の、特定の動画ドキュメントの中に「comments」というサブコレクションを作る
+            await addDoc(collection(db, "posts", postId, "comments"), {
+                text: text,
+                userId: user.uid,
+                createdAt: new Date()
+            });
+
+            document.getElementById('advise-input').value = ""; // 入力欄を空にする
+            alert("アドバイスを送信しました！");
+            renderComments(postId); // 一覧を更新
+        } catch (e) {
+            console.error(e);
+            alert("送信に失敗しました");
+        }
+    }
+
+    async function renderComments(postId) {
+        const commentList = document.getElementById('comment-list');
+        commentList.innerHTML = "読み込み中...";
+
+        // 作成日時順に取得
+        const q = query(collection(db, "posts", postId, "comments"), orderBy("createdAt", "asc"));
+        const querySnapshot = await getDocs(q);
+        
+        commentList.innerHTML = "";
+        querySnapshot.forEach((doc) => {
+            const comment = doc.data();
+            const date = comment.createdAt.toDate().toLocaleString(); // 日付を読みやすく変換
+
+            const div = document.createElement('div');
+            div.style = "background: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #eee; font-size: 0.9em;";
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999; font-size: 0.8em;">${date}</span>
+                </div>
+                <div style="line-height: 1.4;">${comment.text}</div>
+            `;
+            commentList.appendChild(div);
+        });
     }
 
     window.onload = renderVideos;
