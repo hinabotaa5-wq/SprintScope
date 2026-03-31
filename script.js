@@ -74,7 +74,16 @@ window.switchTab = async function(tabName) {
     if(tabName === 'upload') document.getElementById('tab-btn-upload').classList.add('active');
 
     const topTabs = document.getElementById('top-tabs');
-    if(topTabs) topTabs.style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
+    const header = document.querySelector('.header'); // ヘッダーを取得
+
+    if(topTabs) {
+        topTabs.style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'flex';
+    }
+
+    if(header) {
+        // プロフィール画面（profile）と分析画面（analysis）の時だけヘッダーを完全に消す
+        header.style.display = (tabName === 'profile' || tabName === 'analysis') ? 'none' : 'block';
+    }
     
     renderVideos();
 }
@@ -130,79 +139,122 @@ async function renderVideos() {
     const profGrid = document.getElementById('profile-video-list');
     const user = auth.currentUser;
 
-    if (grid) grid.innerHTML = "読み込み中...";
+    if (grid) grid.innerHTML = "<p>Loading...</p>";
     if (profGrid) profGrid.innerHTML = "";
-
+    
     try {
         const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
         const querySnapshot = await getDocs(q);
-        
+
         if (grid) grid.innerHTML = "";
+
+        const createVideoCardHTML = (post, phaseText, thumbUrl) => `
+            <div class="video-thumbnail-wrapper">
+                <img src="${thumbUrl}" alt="thumbnail" class="video-thumbnail">
+                <div class="phase-label">${phaseText}</div>
+            </div>
+            <div class="video-info">
+                <p class="video-description">${post.question}</p>
+            </div>
+        `;
+
+        // 🔥 動画認証チェック関数（外に出して使い回し）
+        const checkVideoAuth = async function(event) {
+            const video = event.target;
+
+            if (!auth.currentUser) {
+                video.pause();
+
+                if (confirm("動画を再生するにはログインが必要です。ログインしますか？")) {
+                    try {
+                        await signInWithPopup(auth, provider);
+                        video.play();
+                    } catch (e) {
+                        alert("ログインに失敗しました");
+                    }
+                }
+            }
+        };
+
+        // 🔥 分析画面開く
+        const openAnalysis = (post, id) => {
+            window.currentPostId = id;
+            switchTab('analysis');
+
+            document.getElementById('current-title').innerText = post.question;
+
+            const video = document.getElementById('myVideo');
+
+            video.src = post.url;
+            video.load();
+
+            // ⚠️ イベント重複防止
+            video.removeEventListener('play', checkVideoAuth);
+            video.addEventListener('play', checkVideoAuth);
+
+            renderComments(id);
+        };
 
         querySnapshot.forEach((docSnap) => {
             const post = docSnap.data();
             const id = docSnap.id;
 
-            // 分析画面を開く処理を共通化
-            const openAnalysis = () => {
-                window.currentPostId = id;
-                switchTab('analysis');
-                document.getElementById('current-title').innerText = post.question;
-                const video = document.getElementById('myVideo');
-                video.src = post.url;
-                video.load();
-                renderComments(id);
-            };
+            // 🔥 サムネ安全化
+            const thumbUrl = post.thumbnailUrl || post.url.replace(/\.[^/.]+$/, ".jpg");
 
-            // ホーム用カード
+            const match = post.title ? post.title.match(/【(.*?)】/) : null;
+            const phaseText = match ? match[1] : "(質問なし)";
+
+            // --- ホームカード ---
             const homeCard = document.createElement('div');
-            const thumbUrl = post.url.replace(/\.[^/.]+$/, ".jpg");
-            homeCard.className = 'video-card';
-            homeCard.innerHTML = `
-                <div class="thumbnail" style="background-image: url('${thumbUrl}'); background-size: cover; background-position: center;">
-                </div>
-                <p>${post.question}</p>
-            `;
-            homeCard.onclick = openAnalysis;
+            homeCard.className = 'video-card'; 
+            homeCard.innerHTML = createVideoCardHTML(post, phaseText, thumbUrl);
+
+            // 🔥 引数ちゃんと渡す
+            homeCard.onclick = () => openAnalysis(post, id);
+
             if (grid) grid.appendChild(homeCard);
 
-            // プロフィール用カード（自分の投稿のみ）
+            // --- プロフィールカード ---
             if (profGrid && user && post.userId === user.uid) {
                 const profCard = document.createElement('div');
-                const thumbUrl = post.url.replace(/\.[^/.]+$/, ".jpg");
-
                 profCard.className = 'video-card';
-                profCard.style.position = "relative";
-                profCard.innerHTML = `
-                <div class="thumbnail" style="background-image: url('${thumbUrl}'); background-size: cover; background-position: center;">
-                </div>
-                <p>${post.question}</p>
-                `;
-                profCard.onclick = openAnalysis;
+                profCard.innerHTML = createVideoCardHTML(post, phaseText, thumbUrl);
 
+                profCard.onclick = () => openAnalysis(post, id);
+
+                // 削除ボタンをサムネイル内に配置
                 const delBtn = document.createElement('button');
                 delBtn.className = 'del-btn';
                 delBtn.innerHTML = '×';
                 delBtn.onclick = (e) => {
-                    e.stopPropagation(); // 分析画面が開くのを防ぐ
+                    e.stopPropagation();
                     deleteVideo(id);
                 };
-                profCard.appendChild(delBtn);
+
+                // サムネイルのラッパー内に削除ボタンを追加
+                const thumbnailWrapper = profCard.querySelector('.video-thumbnail-wrapper');
+                thumbnailWrapper.appendChild(delBtn);
                 profGrid.appendChild(profCard);
             }
         });
-    } catch (e) {
-        console.error("データ取得エラー:", e);
+
+        // Lucideアイコン
+        if (window.lucide) {
+            lucide.createIcons();
+        }
+
+    } catch (e) { 
+        console.error("表示エラー:", e); 
     }
 }
 
 // --- 5. 削除機能 ---
 window.deleteVideo = async function(id) {
-    if (!confirm("この練習動画を削除しますか？")) return;
+    if (!confirm("削除しますか？")) return;
     try {
         await deleteDoc(doc(db, "posts", id));
         alert("削除しました");
-        renderVideos();
     } catch (e) {
         alert("削除に失敗しました");
     }
@@ -296,7 +348,6 @@ window.editComment = async function(postId, commentId, oldText) {
     const newText = prompt("アドバイスを編集してください：", oldText);
     if (!newText || newText === oldText) return;
     try {
-        const { updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         const commentRef = doc(db, "posts", postId, "comments", commentId);
         await updateDoc(commentRef, {
             text: newText,
