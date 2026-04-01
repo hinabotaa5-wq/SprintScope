@@ -111,6 +111,51 @@ body {
   border-bottom: 3px solid #0ea5e9;
 }
 
+#phase-tabs-container {
+  padding: 10px 20px;
+}
+
+.phase-tabs {
+  display: flex;
+  gap: 8px; /* タブ同士の間隔 */
+}
+
+.phase-tab {
+  padding: 6px 15px;
+  border: 1px solid #ccc;
+  background: white;
+  border-radius: 20px; /* 丸みをつけると今風 */
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.phase-tab.active {
+  background: #3085d6; /* SweetAlert2の確認ボタンと色を合わせると統一感◎ */
+  color: white;
+  border-color: #3085d6;
+}
+
+.phase-tab:hover:not(.active) {
+  background: #eeeeee;
+}
+
+.sort-btn {
+  padding: 4px 12px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 6px; /* タブと少し形を変えて区別してもOK */
+  font-size: 13px;
+  cursor: pointer;
+  color: #666;
+}
+
+.sort-btn.active {
+  background: #64748b; /* 局面タブの青とは違う色（グレー系など）にすると分かりやすい */
+  color: white;
+  border-color: #64748b;
+}
+
 /* ===== グリッド ===== */
 .video-grid {
   display: grid;
@@ -204,10 +249,6 @@ textarea {
   min-height: 50px;
 }
 
-#profile-screen {
-    margin-top: -60px;
-}
-
 /* ===== ボタン ===== */
 .upload-btn {
   width: 100%;
@@ -226,6 +267,11 @@ textarea {
 }
 
 /* ===== その他 ===== */
+
+#profile-screen {
+    margin-top: -60px;
+}
+
 .del-btn { position: absolute; top: 5px; right: 5px; background: rgba(255,255,255,0.8); border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; color: #e74c3c; z-index: 10; }
 
 .del-btn:hover { background: #e74c3c; color: white; }
@@ -237,7 +283,6 @@ textarea {
   padding: 6px 14px;
   border-radius: 6px;
 }
-
 .btn-speed { 
   background: #eee; 
   border: 1px solid #ccc; 
@@ -252,13 +297,105 @@ textarea {
   border-color: #0ea5e9;
 }
 
+/* 通報ボタンのスタイル（速度ボタンのサイズに合わせる） */
+.btn-video-report {
+  position: absolute;
+  right: 0;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  border: 1px solid #fca5a5;
+  background-color: white;
+  color: #ef4444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.btn-video-report:hover {
+  background-color: #fef2f2;
+  border-color: #ef4444;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.1);
+}
+
 .btn-advise {
   background: #0ea5e9;
   color: white;
   border: none;
   cursor: pointer;
 }
-
 .btn-advise:hover {
   background: #0ea5e9;
+}
+
+.comment-card {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.comment-date {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+.comment-body {
+  line-height: 1.5;
+  color: #334155;
+  word-break: break-all; /* 長い英単語でもはみ出さないように */
+}
+
+/* コメントアクション全体の配置 */
+.comment-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end; /* 右寄せ */
+  gap: 6px; /* ボタン同士の隙間 */
+}
+
+/* 全てのボタンに共通する「土台」のデザイン */
+.comment-actions button {
+  padding: 2px 10px;
+  font-size: 11px;
+  border-radius: 4px;
+  border: 1px solid;
+  background-color: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-comment-edit {
+  border-color: #0ea5e9;
+}
+.btn-comment-edit:hover {
+  border-color: #0ea5e9;
+  color: #0ea5e9;
+  background-color: #f0f9ff;
+}
+
+.btn-comment-delete {
+  border-color: #ef4444;
+}
+.btn-comment-delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.btn-comment-report {
+  border-color: #f59e0b;
+}
+.btn-comment-report:hover {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  background-color: #fffbeb;
 }
