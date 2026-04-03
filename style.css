@@ -207,6 +207,17 @@ body {
   border-radius: 4px;
 }
 
+.personal-best-label {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: #1b80ae;
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+}
+
 /* ===== 投稿画面 ===== */
 #upload-screen {
   display: flex;
@@ -247,6 +258,44 @@ input, select, textarea {
 
 textarea {
   min-height: 50px;
+}
+
+/* アドバイス入力エリアのレスポンシブ対応 */
+.advice-box {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+#advise-input {
+  width: 100%;
+  height: 60px;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-sizing: border-box; /* paddingを含めた幅計算 */
+}
+
+/* 小画面での調整 */
+@media (max-width: 768px) {
+  #advise-input {
+    font-size: 0.85rem;
+    height: 50px;
+    border-radius: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  #advise-input {
+    font-size: 0.8rem;
+    height: 45px;
+    padding: 0.5rem;
+  }
+  
+  .btn-advise {
+    padding: 8px;
+    font-size: 0.85rem;
+  }
 }
 
 /* ===== ボタン ===== */
@@ -325,6 +374,11 @@ textarea {
   color: white;
   border: none;
   cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+  padding: 10px;
+  font-weight: 700;
+  border-radius: 8px;
 }
 .btn-advise:hover {
   background: #0ea5e9;
@@ -398,4 +452,65 @@ textarea {
   border-color: #f59e0b;
   color: #f59e0b;
   background-color: #fffbeb;
+}
+
+.btn-comment-reply {
+  border-color: #10b981;
+}
+.btn-comment-reply:hover {
+  border-color: #10b981;
+  color: #10b981;
+  background-color: #f0fdf4;
+}
+
+.btn-inquiry {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-inquiry:hover {
+  background: #4f46e5;
+  transform: translateY(-1px);
+}
+
+/* 返信関連のスタイル */
+.reply-indicator {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+
+.reply-to-original {
+  margin-bottom: 8px;
+}
+
+.original-comment {
+  background: #fafbfc;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #64748b;
+  word-break: break-all;
+  position: relative;
+}
+
+.original-comment::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #10b981;
+  border-radius: 2px 0 0 2px;
 }
