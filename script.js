@@ -155,6 +155,7 @@ window.sortVideos = function(order, element) {
 window.submitPost = async function() {
     const fileInput = document.getElementById('video-file-input');
     const phase = document.getElementById('sprint-phase').value;
+    const personalBest = document.getElementById('personal-best').value;
     const question = document.getElementById('user-question').value;
     const user = auth.currentUser;
 
@@ -196,6 +197,7 @@ window.submitPost = async function() {
         await addDoc(collection(db, "posts"), {
             url: data.secure_url,
             title: `【${phase}】 ${new Date().toLocaleDateString()}`,
+            personalBest: personalBest || "",
             question: question || "（質問なし）",
             userId: user.uid,
             userName: user.displayName,
@@ -214,6 +216,7 @@ window.submitPost = async function() {
         document.getElementById('user-question').value = "";
         document.getElementById('video-file-input').value = "";
         document.getElementById('sprint-phase').value = "スタート";
+        document.getElementById('personal-best').value = "";
         switchTab('home');
 
     } catch (e) {
@@ -248,10 +251,11 @@ async function renderVideos() {
 
         if (grid) grid.innerHTML = "";
 
-        const createVideoCardHTML = (post, phaseText, thumbUrl) => `
+        const createVideoCardHTML = (post, phaseText, personalBest, thumbUrl) => `
             <div class="video-thumbnail-wrapper">
                 <img src="${thumbUrl}" alt="thumbnail" class="video-thumbnail">
                 <div class="phase-label">${phaseText}</div>
+                ${personalBest ? `<div class="personal-best-label">${personalBest}</div>` : ''}
             </div>
             <div class="video-info">
                 <p class="video-description">${post.question}</p>
@@ -314,7 +318,6 @@ async function renderVideos() {
             video.removeEventListener('play', checkVideoAuth);
             video.addEventListener('play', checkVideoAuth);
 
-            // --- ★ここから追加：動画通報ボタンの出し分け ---
             const reportBtn = document.getElementById('btn-report-video');
             if (reportBtn && auth.currentUser) {
                 // 投稿者が自分以外 (userId !== currentUid) の時だけ表示する
@@ -324,8 +327,7 @@ async function renderVideos() {
                     reportBtn.style.display = 'none'; // 自分の動画なら隠す
                 }
             }
-            // ------------------------------------------
-
+            
             renderComments(id);
         };  
 
@@ -338,6 +340,7 @@ async function renderVideos() {
 
             const match = post.title ? post.title.match(/【(.*?)】/) : null;
             const phaseText = match ? match[1] : "(質問なし)";
+            const personalBest = post.personalBest || "";
 
             if (currentPhase !== 'all' && phaseText !== currentPhase) {
                 return; // この動画は表示せずに次のループへ
@@ -346,7 +349,7 @@ async function renderVideos() {
             // --- ホームカード ---
             const homeCard = document.createElement('div');
             homeCard.className = 'video-card'; 
-            homeCard.innerHTML = createVideoCardHTML(post, phaseText, thumbUrl);
+            homeCard.innerHTML = createVideoCardHTML(post, phaseText, personalBest, thumbUrl);
 
             // 🔥 引数ちゃんと渡す
             homeCard.onclick = () => openAnalysis(post, id);
@@ -357,7 +360,7 @@ async function renderVideos() {
             if (profGrid && user && post.userId === user.uid) {
                 const profCard = document.createElement('div');
                 profCard.className = 'video-card';
-                profCard.innerHTML = createVideoCardHTML(post, phaseText, thumbUrl);
+                profCard.innerHTML = createVideoCardHTML(post, phaseText, personalBest, thumbUrl);
 
                 profCard.onclick = () => openAnalysis(post, id);
 
@@ -563,18 +566,20 @@ async function renderComments(postId) {
             
             // --- ここが「出し分け」の重要ポイント ---
             if (user && comment.userId === user.uid) {
-                // 自分のコメント：編集と削除だけ
+                // 自分のコメント：編集、削除、返信
                 actionButtons = `
                     <div class="comment-actions">
+                        <button class="btn-comment-reply" onclick="replyToComment('${postId}', '${commentId}', '${comment.userName}', '${comment.text.replace(/'/g, "\\'")}')">返信</button>
                         <button class="btn-comment-edit" onclick="editComment('${postId}', '${commentId}', '${comment.text.replace(/'/g, "\\'")}')">編集</button>
                         <button class="btn-comment-delete" onclick="deleteComment('${postId}', '${commentId}')">削除</button>
                     </div>
                 `;
             } else {
-                // 他人のコメント：通報だけ（ログインしてなくてもボタンは出す or ログイン時のみ）
+                // 他人のコメント：通報、返信（ログインしてなくてもボタンは出す）
                 actionButtons = `
                     <div class="comment-actions">
-                        <button class="btn-comment-report" onclick="reportComment('${postId}', '${commentId}', '${comment.text.replace(/'/g, "\\'")}')">通報</button>
+                    <button class="btn-comment-reply" onclick="replyToComment('${postId}', '${commentId}', '${comment.userName}', '${comment.text.replace(/'/g, "\\'")}')">返信</button>
+                    <button class="btn-comment-report" onclick="reportComment('${postId}', '${commentId}', '${comment.text.replace(/'/g, "\\'")}')">通報</button>
                     </div>
                 `;
             }
@@ -582,7 +587,16 @@ async function renderComments(postId) {
             div.innerHTML = `
                 <div class="comment-header">
                     <span class="comment-date">${date}</span>
+                    ${comment.replyTo ? `<span class="reply-indicator">↳ 返信</span>` : ''}
                 </div>
+                ${comment.replyTo ? `
+                    <div class="reply-to-original">
+                        <div class="original-comment">
+                            <div style="font-size: 0.8em; color: #64748b; margin-bottom: 2px;">元のコメント:</div>
+                            <div style="font-style: italic;">${comment.replyTo.originalText.length > 60 ? comment.replyTo.originalText.substring(0, 60) + '...' : comment.replyTo.originalText}</div>
+                        </div>
+                    </div>
+                ` : ''}
                 <div class="comment-body">${comment.text}</div>
                 ${actionButtons}
             `;
@@ -697,6 +711,86 @@ window.deleteComment = async function(postId, commentId) {
     }
 };
 
+window.replyToComment = async function(postId, commentId, replyToUser, originalText) {
+    if (!auth.currentUser) {
+        await Swal.fire({
+            icon: 'info',
+            title: 'ログインが必要です',
+            text: '返信するにはログインしてください',
+            confirmButtonColor: '#3085d6'
+        });
+        return;
+    }
+
+    // 元のコメントを短く表示（匿名化）
+    const shortOriginal = originalText.length > 40 ? originalText.substring(0, 40) + '...' : originalText;
+
+    const { value: replyText } = await Swal.fire({
+        title: 'コメントに返信',
+        html: `
+            <div style="text-align: left; margin-bottom: 15px;">
+                <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border-left: 4px solid #10b981;">
+                    <div style="font-size: 0.85em; color: #64748b; margin-bottom: 4px;">元のコメント:</div>
+                    <div style="font-style: italic; color: #334155;">"${shortOriginal}"</div>
+                </div>
+            </div>
+        `,
+        input: 'textarea',
+        inputPlaceholder: '返信内容を入力してください...',
+        inputAttributes: {
+            'style': 'min-height: 100px; resize: vertical;',
+            'rows': '4'
+        },
+        showCancelButton: true,
+        confirmButtonText: '返信を投稿',
+        cancelButtonText: 'キャンセル',
+        confirmButtonColor: '#10b981',
+        preConfirm: (value) => {
+            if (!value || !value.trim()) {
+                Swal.showValidationMessage('返信内容を入力してください');
+                return false;
+            }
+            return value.trim();
+        }
+    });
+
+    if (replyText) {
+        try {
+            await addDoc(collection(db, "posts", postId, "comments"), {
+                text: replyText,
+                userId: auth.currentUser.uid,
+                userName: auth.currentUser.displayName,
+                replyTo: {
+                    commentId: commentId,
+                    userName: replyToUser,
+                    originalText: originalText
+                },
+                createdAt: new Date()
+            });
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: '返信を投稿しました！',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+
+            renderComments(postId);
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire({
+                icon: 'error',
+                title: '投稿に失敗しました',
+                text: 'ネットワークの状態を確認して、もう一度お試しください。'
+            });
+        }
+    }
+};
+
 window.editComment = async function(postId, commentId, oldText) {
     // 1. promptをSwalの入力ダイアログに置き換え
     const { value: newText } = await Swal.fire({
@@ -744,6 +838,60 @@ window.editComment = async function(postId, commentId, oldText) {
         });
     }
 }
+
+window.openInquiry = async function() {
+    const { value: inquiryText } = await Swal.fire({
+        title: '問い合わせ',
+        input: 'textarea',
+        inputPlaceholder: 'お問い合わせ内容を入力してください...',
+        inputAttributes: {
+            'style': 'min-height: 120px; resize: vertical;',
+            'rows': '5'
+        },
+        showCancelButton: true,
+        confirmButtonText: '送信する',
+        cancelButtonText: 'キャンセル',
+        confirmButtonColor: '#6366f1',
+        preConfirm: (value) => {
+            if (!value || !value.trim()) {
+                Swal.showValidationMessage('お問い合わせ内容を入力してください');
+                return false;
+            }
+            return value.trim();
+        }
+    });
+
+    if (inquiryText) {
+        try {
+            // ここに実際の送信処理を追加（メールやデータベースなど）
+            await addDoc(collection(db, "inquiries"), {
+                text: inquiryText,
+                userId: auth.currentUser ? auth.currentUser.uid : null,
+                userName: auth.currentUser ? auth.currentUser.displayName : '匿名ユーザー',
+                createdAt: new Date(),
+                status: "pending"
+            });
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'お問い合わせを送信しました！',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+        } catch (e) {
+            console.error(e);
+            Swal.fire({
+                icon: 'error',
+                title: '送信に失敗しました',
+                text: 'ネットワークの状態を確認して、もう一度お試しください。'
+            });
+        }
+    }
+};
 
 window.onload = () => {
     renderVideos();
