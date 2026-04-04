@@ -54,8 +54,18 @@ window.handleAuth = async function() {
     }
 }
 
+function updateAnalysisVideoLoginOverlay() {
+    const analysisScreen = document.getElementById('analysis-screen');
+    const overlay = document.getElementById('analysis-video-login-overlay');
+    if (!overlay || !analysisScreen) return;
+    const onAnalysis = analysisScreen.style.display === 'block';
+    const show = onAnalysis && !auth.currentUser;
+    overlay.style.display = show ? 'flex' : 'none';
+    overlay.setAttribute('aria-hidden', show ? 'false' : 'true');
+}
+
 onAuthStateChanged(auth, (user) => {
-    renderVideos(); // ログイン状態が変わったら画面を更新
+    renderVideos().then(() => updateAnalysisVideoLoginOverlay());
 });
 
 // --- 2. タブ切り替え ---
@@ -274,32 +284,29 @@ async function renderVideos() {
             return wrapper.innerHTML;
         };
 
-        // 動画認証チェック関数（使い回し用）
+        // 動画認証チェック関数
         const checkVideoAuth = async function(event) {
             const video = event.target;
-
+            
             if (!auth.currentUser) {
-                // まず動画を止める
+                // 絶対に動画を先に止める
                 video.pause();
 
-                // 画面内ダイアログを表示
                 const result = await Swal.fire({
                     title: 'ログインが必要です',
-                    text: '動画の続きを視聴するにはログインしてください。',
+                    text: '動画を再生するにはログインしてください。',
                     icon: 'info',
                     showCancelButton: true,
                     confirmButtonText: 'ログインする',
                     cancelButtonText: 'あとで',
                     confirmButtonColor: '#3085d6',
                     cancelButtonColor: '#aaa',
-                    // ダイアログの外をクリックしても閉じないようにする（強制力を高める場合）
                     allowOutsideClick: false 
                 });
 
                 if (result.isConfirmed) {
                     try {
                         await signInWithPopup(auth, provider);
-                        // ログイン成功したら再生再開
                         video.play();
                     } catch (e) {
                         Swal.fire({
@@ -309,7 +316,6 @@ async function renderVideos() {
                         });
                     }
                 } else {
-                    // キャンセルされた場合、動画を最初に戻すなどの処理が必要ならここに書く
                     video.currentTime = 0; 
                 }
             }
@@ -326,20 +332,20 @@ async function renderVideos() {
             video.src = post.url;
             video.load();
 
-            // イベント重複防止
+            // イベントを登録（再生しようとした時に発動）
             video.removeEventListener('play', checkVideoAuth);
             video.addEventListener('play', checkVideoAuth);
 
             const reportBtn = document.getElementById('btn-report-video');
-            if (reportBtn && auth.currentUser) {
-                // 投稿者が自分以外 (userId !== currentUid) の時だけ表示する
-                if (post.userId !== auth.currentUser.uid) {
-                    reportBtn.style.display = 'inline-flex'; // または 'block'
+            if (reportBtn) {
+                if (auth.currentUser && post.userId !== auth.currentUser.uid) {
+                    reportBtn.style.display = 'inline-flex';
                 } else {
-                    reportBtn.style.display = 'none'; // 自分の動画なら隠す
+                    reportBtn.style.display = 'none';
                 }
             }
-            
+
+            updateAnalysisVideoLoginOverlay();
             renderComments(id);
         };  
 
@@ -395,6 +401,8 @@ async function renderVideos() {
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
+
+        updateAnalysisVideoLoginOverlay();
 
     } catch (e) { 
         console.error("表示エラー:", e); 
@@ -951,6 +959,92 @@ window.openInquiry = async function() {
         }
     }
 };
+
+// --- 動画のピンチズーム・パン（スクロール）機能 ---
+const zoomVideo = document.getElementById('myVideo');
+let vScale = 1;
+let vX = 0;
+let vY = 0;
+let vInitialDist = 0;
+let vInitialScale = 1;
+let vLastTouchPos = null;
+
+function updateVideoTransform() {
+    zoomVideo.style.transform = `translate(${vX}px, ${vY}px) scale(${vScale})`;
+}
+
+zoomVideo.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        vInitialDist = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+        vInitialScale = vScale;
+        vLastTouchPos = null;
+    } else if (e.touches.length === 1 && vScale > 1) {
+        vLastTouchPos = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+    }
+}, { passive: false });
+
+zoomVideo.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault(); 
+        const dist = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+        vScale = vInitialScale * (dist / vInitialDist);
+        
+        if (vScale < 1) {
+            vScale = 1;
+            vX = 0;
+            vY = 0;
+        }
+        if (vScale > 4) vScale = 4; // 最大4倍
+        updateVideoTransform();
+    } else if (e.touches.length === 1 && vScale > 1 && vLastTouchPos) {
+        e.preventDefault(); 
+        const dx = e.touches[0].pageX - vLastTouchPos.x;
+        const dy = e.touches[0].pageY - vLastTouchPos.y;
+        vX += dx;
+        vY += dy;
+        vLastTouchPos = { x: e.touches[0].pageX, y: e.touches[0].pageY };
+        updateVideoTransform();
+    }
+}, { passive: false });
+
+zoomVideo.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+        vInitialDist = 0;
+    }
+    if (e.touches.length === 0) {
+        vLastTouchPos = null;
+        if (vScale < 1.1) { // ちょっとの拡大なら元に戻す
+            vScale = 1;
+            vX = 0;
+            vY = 0;
+            updateVideoTransform();
+        }
+    }
+});
+
+let vLastTap = 0;
+zoomVideo.addEventListener('touchend', (e) => {
+    if (e.touches.length > 0) return;
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - vLastTap;
+    if (tapLength < 300 && tapLength > 0) {
+        // ダブルタップでリセット
+        vScale = 1;
+        vX = 0;
+        vY = 0;
+        zoomVideo.style.transition = 'transform 0.2s ease';
+        updateVideoTransform();
+        setTimeout(() => { zoomVideo.style.transition = 'none'; }, 200);
+        e.preventDefault();
+    }
+    vLastTap = currentTime;
+});
 
 window.onload = () => {
     renderVideos();

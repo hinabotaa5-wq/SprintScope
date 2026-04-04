@@ -130,8 +130,13 @@
             <h2 id="current-title" style="font-size: 1.1rem; margin: 0; color: #1e293b;">動画分析</h2>
         </div>
 
-        <div style="background: #000; border-radius: 12px; overflow: hidden; line-height: 0;">
-            <video id="myVideo" controls style="width: 100%; max-height: 60vh;"></video>
+        <div class="analysis-video-wrap">
+            <video id="myVideo" controls playsinline webkit-playsinline style="width: 100%; max-height: 60vh;"></video>
+            <div id="analysis-video-login-overlay" class="analysis-video-login-overlay" style="display: none;"
+                aria-hidden="true">
+                <p class="analysis-video-login-text">再生するにはログインが必要です</p>
+                <button type="button" class="btn-analysis-login" onclick="handleAuth()">ログイン</button>
+            </div>
         </div>
 
         <div
