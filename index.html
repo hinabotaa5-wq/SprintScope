@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <link rel="stylesheet" href="style.css">
 
@@ -15,9 +16,8 @@
                 <h1 class="main-logo" onclick="location.reload()">SprintScope</h1>
                 <p class="sub-message">動画を投稿して客観的な視点を取り入れましょう！</p>
             </div>
-            
+
             <div class="header-actions">
-                <button id="auth-btn" class="btn-auth-large" onclick="handleAuth()">ログイン</button>
                 <button class="profile-icon-large" onclick="switchTab('profile')">👤</button>
             </div>
         </div>
@@ -28,8 +28,9 @@
         <button id="tab-btn-upload" class="tab-btn" onclick="switchTab('upload')">投稿</button>
     </div>
 
-    <div id="phase-tabs-container" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        
+    <div id="phase-tabs-container"
+        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+
         <div class="phase-tabs">
             <button class="phase-tab active" onclick="filterByPhase('all', this)">すべて</button>
             <button class="phase-tab" onclick="filterByPhase('スタート', this)">スタート</button>
@@ -49,53 +50,67 @@
 
     <div id="upload-screen" style="display: none;">
         <div class="upload-card">
-            
+
             <h2 class="upload-title">動画を投稿</h2>
 
             <div class="input-group">
-             <label>動画</label>
-             <input type="file" id="video-file-input" accept="video/*">
+                <label>動画</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="video-file-input" accept="video/*" class="file-upload-input"
+                        onchange="document.getElementById('file-name-display').textContent = this.files[0] ? this.files[0].name : '選択されていません'">
+                    <div class="file-upload-label">
+                        <i data-lucide="upload" class="upload-icon"></i>
+                        <span class="upload-text">タップして動画を選択</span>
+                        <span class="file-name" id="file-name-display">選択されていません</span>
+                    </div>
+                </div>
             </div>
 
             <div class="input-group">
-              <label>局面</label>
-              <select id="sprint-phase">
-                 <option value="スタート">スタート</option>
-                 <option value="中間">中間</option>
-                 <option value="ラスト">ラスト</option>
-              </select>
+                <label>局面</label>
+                <select id="sprint-phase">
+                    <option value="スタート">スタート</option>
+                    <option value="中間">中間</option>
+                    <option value="ラスト">ラスト</option>
+                </select>
             </div>
 
             <div class="input-group">
-              <label>自己ベスト(任意)</label>
-              <input type="text" id="personal-best" placeholder="例: 12.5秒">
+                <label>自己ベスト(任意)</label>
+                <input type="text" id="personal-best" placeholder="例: 12.5秒">
             </div>
 
             <div class="input-group">
-              <label>聞きたいこと・課題</label>
-              <textarea id="user-question"></textarea>
+                <label>聞きたいこと・課題</label>
+                <textarea id="user-question"></textarea>
             </div>
 
             <button class="upload-btn" id="submit-btn" onclick="submitPost()">
-            投稿する
+                投稿する
             </button>
 
-            <p id="loading-msg" style="display: none; text-align: center; color: #076fa0; font-weight: bold;">
-                アップロード中...
-            </p>
+            <div id="loading-msg" style="display: none;">
+                <div class="loading-content">
+                    <div class="loader-spinner"></div>
+                    <span class="loading-text">アップロード中...</span>
+                </div>
+            </div>
 
         </div>
     </div>
 
     <div id="profile-screen" style="display: none; padding:20px">
-        
-        <div style="margin-bottom: 10px;">
+
+        <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start;">
             <button class="btn-back" onclick="switchTab('home')">← 戻る</button>
+            <div style="display: flex; flex-direction: column; align-items: stretch; gap: 10px;">
+                <button class="btn-inquiry" onclick="openInquiry()">問い合わせ</button>
+                <button id="auth-btn" class="btn-logout" onclick="handleAuth()">ログアウト</button>
+            </div>
         </div>
 
-        <div style="position: relative; margin-bottom: 10px; padding: 0 40px;">
+        <div style="position: relative; margin-bottom: 10px; padding: 0 20px;">
             <h2 style="margin: 20px 0; font-size: 2em; font-weight: bold; text-align: center;">投稿した動画</h2>
-            <button class="btn-inquiry" onclick="openInquiry()" style="position: absolute; right: 40px; top: 50%; transform: translateY(-50%);">問い合わせ</button>
         </div>
 
         <div style="display: flex; justify-content: center; margin-top: 30px; gap: 8px;">
@@ -110,23 +125,24 @@
 
     <div id="analysis-screen" style="display: none; max-width: 800px;margin: auto;margin-top: -160px; padding: 0 1rem;">
         <div style="display: flex; align-items: center; gap: 15px; margin-top: 100px; margin-bottom: 10px;">
-            <button class="btn-back" onclick="switchTab('home')" style="padding: 5px 12px; font-size: 0.9rem;">← 戻る</button>
+            <button class="btn-back" onclick="switchTab('home')" style="padding: 5px 12px; font-size: 0.9rem;">←
+                戻る</button>
             <h2 id="current-title" style="font-size: 1.1rem; margin: 0; color: #1e293b;">動画分析</h2>
         </div>
-        
+
         <div style="background: #000; border-radius: 12px; overflow: hidden; line-height: 0;">
-            <video id="myVideo" controls style="width: 100%; max-height: 60vh;" onplay="checkVideoAuth(event)"></video>
+            <video id="myVideo" controls style="width: 100%; max-height: 60vh;"></video>
         </div>
 
-        <div style="text-align:center; margin: 20px 0; display: flex; justify-content: center; align-items: center; gap: 8px; position: relative;">
-            
+        <div
+            style="text-align:center; margin: 20px 0; display: flex; justify-content: center; align-items: center; gap: 8px; position: relative;">
+
             <button class="btn-speed" onclick="changeSpeed(0.25, this)">0.25x</button>
             <button class="btn-speed" onclick="changeSpeed(0.5, this)">0.5x</button>
             <button class="btn-speed active" onclick="changeSpeed(1.0, this)">1.0x</button>
-            
-            <button id="btn-report-video" class="btn-video-report" 
-                    style="position: absolute; right: 0;" 
-                    onclick="reportVideo(window.currentPostId)">
+
+            <button id="btn-report-video" class="btn-video-report" style="position: absolute; right: 0;"
+                onclick="reportVideo(window.currentPostId)">
                 <i data-lucide="flag"></i> 通報
             </button>
         </div>
@@ -138,6 +154,35 @@
 
         <div id="comment-list" style="margin-top: 15px;"></div>
     </div>
+
+    <!-- HTML Templates -->
+    <template id="video-card-template">
+        <div class="video-thumbnail-wrapper">
+            <img src="" alt="thumbnail" class="video-thumbnail">
+            <div class="phase-label"></div>
+            <div class="personal-best-label" style="display: none;"></div>
+        </div>
+        <div class="video-info">
+            <p class="video-description"></p>
+        </div>
+    </template>
+
+    <template id="comment-card-template">
+        <div class="comment-card">
+            <div class="comment-header">
+                <span class="comment-date"></span>
+                <span class="reply-indicator" style="display: none;">↳ 返信</span>
+            </div>
+            <div class="reply-to-original" style="display: none;">
+                <div class="original-comment">
+                    <div style="font-size: 0.8em; color: #64748b; margin-bottom: 2px;">元のコメント:</div>
+                    <div style="font-style: italic;"></div>
+                </div>
+            </div>
+            <div class="comment-body"></div>
+            <div class="comment-actions"></div>
+        </div>
+    </template>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/lucide@latest"></script>

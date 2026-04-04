@@ -55,14 +55,6 @@ window.handleAuth = async function() {
 }
 
 onAuthStateChanged(auth, (user) => {
-    const authBtn = document.getElementById('auth-btn');
-    if (user) {
-        authBtn.innerText = "ログアウト";
-        authBtn.style.background = "#95a5a6";
-    } else {
-        authBtn.innerText = "ログイン";
-        authBtn.style.background = "#0ea5e9";
-    }
     renderVideos(); // ログイン状態が変わったら画面を更新
 });
 
@@ -100,6 +92,15 @@ window.switchTab = async function(tabName) {
         }
     }
     console.log(`Tab switched to: ${tabName}`);
+
+    // フィルタの状態を「すべて」にリセット
+    currentPhase = 'all';
+    document.querySelectorAll('.phase-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.textContent.includes('すべて')) {
+            tab.classList.add('active');
+        }
+    });
 
     const screens = ['home', 'upload', 'profile', 'analysis'];
     screens.forEach(s => document.getElementById(s + '-screen').style.display = 'none');
@@ -204,7 +205,7 @@ window.submitPost = async function() {
             createdAt: new Date()
         });
 
-        // --- 成功時の演出 ---
+        // 成功時の演出
         await Swal.fire({
             icon: 'success',
             title: '投稿完了！',
@@ -215,13 +216,15 @@ window.submitPost = async function() {
 
         document.getElementById('user-question').value = "";
         document.getElementById('video-file-input').value = "";
+        const fileNameDisplay = document.getElementById('file-name-display');
+        if (fileNameDisplay) fileNameDisplay.textContent = '選択されていません';
         document.getElementById('sprint-phase').value = "スタート";
         document.getElementById('personal-best').value = "";
         switchTab('home');
 
     } catch (e) {
         console.error(e);
-        // --- 失敗時の演出 ---
+        // 失敗時の演出
         Swal.fire({
             icon: 'error',
             title: 'アップロード失敗',
@@ -251,18 +254,27 @@ async function renderVideos() {
 
         if (grid) grid.innerHTML = "";
 
-        const createVideoCardHTML = (post, phaseText, personalBest, thumbUrl) => `
-            <div class="video-thumbnail-wrapper">
-                <img src="${thumbUrl}" alt="thumbnail" class="video-thumbnail">
-                <div class="phase-label">${phaseText}</div>
-                ${personalBest ? `<div class="personal-best-label">${personalBest}</div>` : ''}
-            </div>
-            <div class="video-info">
-                <p class="video-description">${post.question}</p>
-            </div>
-        `;
+        const createVideoCardHTML = (post, phaseText, personalBest, thumbUrl) => {
+            const template = document.getElementById('video-card-template');
+            const clone = template.content.cloneNode(true);
+            
+            clone.querySelector('.video-thumbnail').src = thumbUrl;
+            clone.querySelector('.phase-label').textContent = phaseText;
+            
+            const personalBestLabel = clone.querySelector('.personal-best-label');
+            if (personalBest) {
+                personalBestLabel.textContent = personalBest;
+                personalBestLabel.style.display = 'block';
+            }
+            
+            clone.querySelector('.video-description').textContent = post.question;
+            
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(clone);
+            return wrapper.innerHTML;
+        };
 
-        // 🔥 動画認証チェック関数（外に出して使い回し）
+        // 動画認証チェック関数（使い回し用）
         const checkVideoAuth = async function(event) {
             const video = event.target;
 
@@ -303,7 +315,7 @@ async function renderVideos() {
             }
         };
 
-        // 🔥 分析画面開く
+        // 分析画面を開く
         const openAnalysis = (post, id) => {
             window.currentPostId = id;
             switchTab('analysis');
@@ -314,7 +326,7 @@ async function renderVideos() {
             video.src = post.url;
             video.load();
 
-            // ⚠️ イベント重複防止
+            // イベント重複防止
             video.removeEventListener('play', checkVideoAuth);
             video.addEventListener('play', checkVideoAuth);
 
@@ -335,7 +347,7 @@ async function renderVideos() {
             const post = docSnap.data();
             const id = docSnap.id;
 
-            // 🔥 サムネ安全化
+            // サムネイルURLの安全化
             const thumbUrl = post.thumbnailUrl || post.url.replace(/\.[^/.]+$/, ".jpg");
 
             const match = post.title ? post.title.match(/【(.*?)】/) : null;
@@ -346,17 +358,16 @@ async function renderVideos() {
                 return; // この動画は表示せずに次のループへ
             }
 
-            // --- ホームカード ---
+            // ホーム用カード
             const homeCard = document.createElement('div');
             homeCard.className = 'video-card'; 
             homeCard.innerHTML = createVideoCardHTML(post, phaseText, personalBest, thumbUrl);
 
-            // 🔥 引数ちゃんと渡す
             homeCard.onclick = () => openAnalysis(post, id);
 
             if (grid) grid.appendChild(homeCard);
 
-            // --- プロフィールカード ---
+            // プロフィール用カード
             if (profGrid && user && post.userId === user.uid) {
                 const profCard = document.createElement('div');
                 profCard.className = 'video-card';
@@ -513,7 +524,7 @@ window.postAdvice = async function() {
 
         document.getElementById('advise-input').value = ""; // 入力欄を空にする
         
-        // --- 成功：右上にスッと出すトースト通知 ---
+        // 成功：トースト通知
         Swal.fire({
             toast: true,
             position: 'top-end',
@@ -529,7 +540,7 @@ window.postAdvice = async function() {
     } catch (e) {
         console.error(e);
         
-        // --- 失敗：しっかりエラーを伝える ---
+        // 失敗：エラー通知
         Swal.fire({
             icon: 'error',
             title: '送信に失敗しました',
@@ -559,47 +570,69 @@ async function renderComments(postId) {
             const date = comment.createdAt ? comment.createdAt.toDate().toLocaleString() : "送信中...";
 
             const div = document.createElement('div');
-            // ここでスタイルを直接書かずに、CSSで管理すると後で楽になります
-            div.className = "comment-card"; 
+            div.className = "comment-card";
 
-            let actionButtons = "";
+            // Use template for comment structure
+            const template = document.getElementById('comment-card-template');
+            const clone = template.content.cloneNode(true);
             
-            // --- ここが「出し分け」の重要ポイント ---
-            if (user && comment.userId === user.uid) {
-                // 自分のコメント：編集、削除、返信
-                actionButtons = `
-                    <div class="comment-actions">
-                        <button class="btn-comment-reply" onclick="replyToComment('${postId}', '${commentId}', '${comment.userName}', '${comment.text.replace(/'/g, "\\'")}')">返信</button>
-                        <button class="btn-comment-edit" onclick="editComment('${postId}', '${commentId}', '${comment.text.replace(/'/g, "\\'")}')">編集</button>
-                        <button class="btn-comment-delete" onclick="deleteComment('${postId}', '${commentId}')">削除</button>
-                    </div>
-                `;
-            } else {
-                // 他人のコメント：通報、返信（ログインしてなくてもボタンは出す）
-                actionButtons = `
-                    <div class="comment-actions">
-                    <button class="btn-comment-reply" onclick="replyToComment('${postId}', '${commentId}', '${comment.userName}', '${comment.text.replace(/'/g, "\\'")}')">返信</button>
-                    <button class="btn-comment-report" onclick="reportComment('${postId}', '${commentId}', '${comment.text.replace(/'/g, "\\'")}')">通報</button>
-                    </div>
-                `;
+            clone.querySelector('.comment-date').textContent = date;
+            
+            const replyIndicator = clone.querySelector('.reply-indicator');
+            const replyToOriginal = clone.querySelector('.reply-to-original');
+            
+            if (comment.replyTo) {
+                replyIndicator.style.display = 'inline';
+                replyToOriginal.style.display = 'block';
+                replyToOriginal.querySelector('.original-comment div:last-child').textContent = 
+                    comment.replyTo.originalText.length > 60 ? 
+                    comment.replyTo.originalText.substring(0, 60) + '...' : 
+                    comment.replyTo.originalText;
             }
+            
+            clone.querySelector('.comment-body').textContent = comment.text;
+            
+            const actionsContainer = clone.querySelector('.comment-actions');
 
-            div.innerHTML = `
-                <div class="comment-header">
-                    <span class="comment-date">${date}</span>
-                    ${comment.replyTo ? `<span class="reply-indicator">↳ 返信</span>` : ''}
-                </div>
-                ${comment.replyTo ? `
-                    <div class="reply-to-original">
-                        <div class="original-comment">
-                            <div style="font-size: 0.8em; color: #64748b; margin-bottom: 2px;">元のコメント:</div>
-                            <div style="font-style: italic;">${comment.replyTo.originalText.length > 60 ? comment.replyTo.originalText.substring(0, 60) + '...' : comment.replyTo.originalText}</div>
-                        </div>
-                    </div>
-                ` : ''}
-                <div class="comment-body">${comment.text}</div>
-                ${actionButtons}
-            `;
+            // 返信ボタン（全員共通）
+            const replyBtn = document.createElement('button');
+            replyBtn.className = 'btn-comment-reply';
+            replyBtn.textContent = '返信';
+            replyBtn.addEventListener('click', () => {
+                replyToComment(postId, commentId, comment.userName || "", comment.text || "");
+            });
+            actionsContainer.appendChild(replyBtn);
+
+            // コメント権限に応じたボタンの追加
+            if (user && comment.userId === user.uid) {
+                // 自分のコメント：編集、削除
+                const editBtn = document.createElement('button');
+                editBtn.className = 'btn-comment-edit';
+                editBtn.textContent = '編集';
+                editBtn.addEventListener('click', () => {
+                    editComment(postId, commentId, comment.text || "");
+                });
+                actionsContainer.appendChild(editBtn);
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn-comment-delete';
+                deleteBtn.textContent = '削除';
+                deleteBtn.addEventListener('click', () => {
+                    deleteComment(postId, commentId);
+                });
+                actionsContainer.appendChild(deleteBtn);
+            } else {
+                // 他人のコメント：通報
+                const reportBtn = document.createElement('button');
+                reportBtn.className = 'btn-comment-report';
+                reportBtn.textContent = '通報';
+                reportBtn.addEventListener('click', () => {
+                    reportComment(postId, commentId, comment.text || "");
+                });
+                actionsContainer.appendChild(reportBtn);
+            }
+            
+            div.appendChild(clone);
             commentList.appendChild(div);
         });
 
@@ -663,6 +696,32 @@ window.reportComment = async function(postId,commentId, commentText) {
             });
         } catch (e) {
             Swal.fire('エラー', '送信に失敗しました', 'error');
+        }
+    }
+};
+
+window.editComment = async function(postId, commentId, currentText) {
+    const { value: newText } = await Swal.fire({
+        title: 'コメントを編集',
+        input: 'textarea',
+        inputValue: currentText,
+        showCancelButton: true,
+        confirmButtonText: '保存',
+        cancelButtonText: 'キャンセル',
+        confirmButtonColor: '#3085d6',
+        inputValidator: (value) => !value.trim() && '入力してください！'
+    });
+
+    if (newText && newText !== currentText) {
+        try {
+            await updateDoc(doc(db, "posts", postId, "comments", commentId), {
+                text: newText,
+                editedAt: new Date()
+            });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: '編集しました', showConfirmButton: false, timer: 1500 });
+            renderComments(postId);
+        } catch (e) {
+            Swal.fire('エラー', '編集に失敗しました', 'error');
         }
     }
 };
