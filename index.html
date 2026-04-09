@@ -2,19 +2,21 @@
 <html lang="ja">
 
 <head>
-    <link rel="stylesheet" href="style.css">
-
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SprintScope - Full Profile Version</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>SprintScope - 掲示板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 
-<body>
+<body class="qb-app board-app">
     <header class="header glass">
         <div class="header-inner">
             <div class="logo-area">
                 <h1 class="main-logo" onclick="location.reload()">SprintScope</h1>
-                <p class="sub-message">動画を投稿して客観的な視点を取り入れましょう！</p>
+                <p class="sub-message">動画を投稿して、みんなの視点を取り入れましょう。</p>
             </div>
 
             <div class="header-actions">
@@ -23,13 +25,23 @@
         </div>
     </header>
 
-    <div id="top-tabs" class="tab-menu">
-        <button id="tab-btn-home" class="tab-btn active" onclick="switchTab('home')">ホーム</button>
-        <button id="tab-btn-upload" class="tab-btn" onclick="switchTab('upload')">投稿</button>
-    </div>
+    <nav id="top-tabs" class="tab-menu" role="navigation" aria-label="メインメニュー">
+        <button id="tab-btn-home" type="button" class="tab-btn" onclick="switchTab('home')">
+            <span class="tab-btn-icon" aria-hidden="true">🏠</span>
+            <span class="tab-btn-text">ホーム</span>
+        </button>
+        <button id="tab-btn-upload" type="button" class="tab-btn" onclick="switchTab('upload')">
+            <span class="tab-btn-icon" aria-hidden="true">📤</span>
+            <span class="tab-btn-text">投稿</span>
+        </button>
+        <!-- 質問箱リリースまで非表示 -->
+        <button id="tab-btn-questionbox" type="button" class="tab-btn" hidden onclick="switchTab('questionbox')">
+            <span class="tab-btn-icon" aria-hidden="true">💬</span>
+            <span class="tab-btn-text">質問</span>
+        </button>
+    </nav>
 
-    <div id="phase-tabs-container"
-        style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div id="phase-tabs-container" class="phase-tabs-bar">
 
         <div class="phase-tabs">
             <button class="phase-tab active" onclick="filterByPhase('all', this)">すべて</button>
@@ -38,7 +50,7 @@
             <button class="phase-tab" onclick="filterByPhase('ラスト', this)">ラスト</button>
         </div>
 
-        <div class="sort-options" style="display: flex; gap: 5px;">
+        <div class="sort-options">
             <button class="sort-btn active" onclick="sortVideos('newest', this)">新しい順</button>
             <button class="sort-btn" onclick="sortVideos('oldest', this)">古い順</button>
         </div>
@@ -85,6 +97,8 @@
                 <textarea id="user-question"></textarea>
             </div>
 
+            <p>※投稿された動画は90日後に自動的に削除されます</p>
+            
             <button class="upload-btn" id="submit-btn" onclick="submitPost()">
                 投稿する
             </button>
@@ -191,5 +205,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script>
+        window.addEventListener("load", () => {
+            const tab = new URLSearchParams(location.search).get("tab");
+            if ((tab === "home" || tab === "upload") && typeof window.switchTab === "function") {
+                window.switchTab(tab);
+            }
+        });
+    </script>
 </body>
