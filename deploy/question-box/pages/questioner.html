@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コーチに質問する | SprintScope</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="qb-app">
+    <header class="header glass">
+        <div class="header-inner">
+            <div class="logo-area">
+                <h1 class="main-logo" onclick="location.reload()">SprintScope</h1>
+                <p class="sub-message">スプリントの疑問を手軽に質問できます</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrap">
+        <!-- Step indicators -->
+        <nav class="stepper" aria-label="進行状況">
+            <ol class="stepper-list">
+                <li class="stepper-item active" data-step-indicator="1"><span class="step-num">1</span>プラン</li>
+                <li class="stepper-item" data-step-indicator="2"><span class="step-num">2</span>形式</li>
+                <li class="stepper-item" data-step-indicator="3"><span class="step-num">3</span>内容</li>
+                <li class="stepper-item" data-step-indicator="4"><span class="step-num">4</span>決済</li>
+                <li class="stepper-item" data-step-indicator="5"><span class="step-num">5</span>確認</li>
+                <li class="stepper-item" data-step-indicator="6"><span class="step-num">6</span>支払</li>
+            </ol>
+        </nav>
+
+        <div class="flow-card">
+            <!-- Step 1: Standard / Premium -->
+            <div class="flow-step active" id="step-1" data-step="1">
+                <h2 class="flow-title">プランを選ぶ</h2>
+                <div class="plan-grid">
+                    <label class="plan-card">
+                        <input type="radio" name="tier" value="standard" checked>
+                        <span class="plan-card-inner">
+                            <span class="plan-name">スタンダード</span>
+                            <span class="plan-detail">コーチは自動で決定</span>
+                        </span>
+                    </label>
+                    <label class="plan-card">
+                        <input type="radio" name="tier" value="premium">
+                        <span class="plan-card-inner">
+                            <span class="plan-name">プレミアム</span>
+                            <span class="plan-detail">コーチを自分で選べる</span>
+                        </span>
+                    </label>
+                </div>
+                <div class="flow-actions">
+                    <button type="button" class="btn-primary" onclick="goStep(2)">次へ</button>
+                </div>
+                <div class="flow-actions">
+                    <a href="questioner_hub.html" class="btn-secondary">質問者トップへ戻る</a>
+                </div>
+            </div>
+
+            <!-- Step 2: Text / Plus -->
+            <div class="flow-step" id="step-2" data-step="2">
+                <h2 class="flow-title">質問の形式</h2>
+                <div class="format-grid">
+                    <label class="format-card">
+                        <input type="radio" name="format" value="text" checked>
+                        <span class="format-card-inner">
+                            <span class="format-name">テキスト</span>
+                            <span class="format-price" data-price-standard="100" data-price-premium="200">¥100〜</span>
+                            <span class="format-hint">テキストのみ</span>
+                        </span>
+                    </label>
+                    <label class="format-card">
+                        <input type="radio" name="format" value="plus">
+                        <span class="format-card-inner">
+                            <span class="format-name">プラス</span>
+                            <span class="format-price" data-price-standard="150" data-price-premium="250">¥150〜</span>
+                            <span class="format-hint">テキスト＋動画</span>
+                        </span>
+                    </label>
+                </div>
+                <p class="price-legend" id="price-legend"></p>
+                <div class="flow-actions split">
+                    <button type="button" class="btn-secondary" onclick="goStep(1)">戻る</button>
+                    <button type="button" class="btn-primary" onclick="goStep(3)">次へ</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Question + optional video -->
+            <div class="flow-step" id="step-3" data-step="3">
+                <h2 class="flow-title">質問を入力</h2>
+                <p class="flow-desc">コーチに見てほしい点や、知りたいことを記入してください。</p>
+
+                <div class="input-group">
+                    <label for="question-body">質問内容 <span class="req">必須</span></label>
+                    <textarea id="question-body" rows="6" placeholder="例：スタートしてからすぐに上体が起き上がってしまいます。改善のポイントを教えてください。"></textarea>
+                </div>
+
+                <div class="input-group" id="video-block" hidden>
+                    <label>動画 <span class="req">必須（プラス）</span></label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="coach-video-input" accept="video/*" class="file-upload-input"
+                            onchange="document.getElementById('coach-video-name').textContent = this.files[0] ? this.files[0].name : '未選択'">
+                        <div class="file-upload-label">
+                            <span class="upload-text">タップして動画を選択</span>
+                            <span class="file-name" id="coach-video-name">未選択</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-actions split">
+                    <button type="button" class="btn-secondary" onclick="goStep(2)">戻る</button>
+                    <button type="button" class="btn-primary" onclick="goStep(4)">決済方法へ</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Payment Method -->
+            <div class="flow-step" id="step-4" data-step="4">
+                <h2 class="flow-title">決済方法を選択</h2>
+                <p class="flow-desc">支払いに使う方法を選んで、確認画面へ進んでください。</p>
+
+                <div class="payment-method-grid" id="payment-method-grid">
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment-method" value="card" checked>
+                        <span class="payment-method-label">クレジットカード</span>
+                    </label>
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment-method" value="applepay">
+                        <span class="payment-method-label">Apple Pay</span>
+                    </label>
+                    <label class="payment-method-option">
+                        <input type="radio" name="payment-method" value="paypay">
+                        <span class="payment-method-label">PayPay</span>
+                    </label>
+                </div>
+
+                <div class="flow-actions split">
+                    <button type="button" class="btn-secondary" onclick="goStep(3)">戻る</button>
+                    <button type="button" class="btn-primary" onclick="goStep(5)">確認へ進む</button>
+                </div>
+            </div>
+
+            <!-- Step 5: Confirm -->
+            <div class="flow-step" id="step-5" data-step="5">
+                <h2 class="flow-title">送信内容の確認</h2>
+                <p class="flow-desc">回答は3時間以内に届きます。</p>
+
+                <div class="premium-coach-panel" id="premium-coach-panel" hidden>
+                    <h3 class="subheading">コーチを選択</h3>
+                    <p class="flow-desc tight">プレミアムでは、回答を依頼するコーチを1名お選びください。</p>
+                    <div class="coach-grid" id="coach-grid"></div>
+                </div>
+
+                <dl class="summary-list">
+                    <div class="summary-row">
+                        <dt>プラン</dt>
+                        <dd id="summary-tier">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>形式</dt>
+                        <dd id="summary-format">—</dd>
+                    </div>
+                    <div class="summary-row" id="summary-coach-row" hidden>
+                        <dt>コーチ</dt>
+                        <dd id="summary-coach">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>動画</dt>
+                        <dd id="summary-video">—</dd>
+                    </div>
+                    <div class="summary-row summary-question">
+                        <dt>質問</dt>
+                        <dd id="summary-question">—</dd>
+                    </div>
+                    <div class="summary-row summary-total">
+                        <dt>お支払い金額（税込）</dt>
+                        <dd id="summary-price">—</dd>
+                    </div>
+                    <div class="summary-row">
+                        <dt>決済方法</dt>
+                        <dd id="summary-payment-method">—</dd>
+                    </div>
+                </dl>
+
+                <div class="flow-actions split">
+                    <button type="button" class="btn-secondary" onclick="goStep(4)">戻る</button>
+                    <button type="button" class="btn-primary" id="btn-send-coach" onclick="submitToCoach()">コーチへ送る</button>
+                </div>
+            </div>
+
+            <!-- Step 6: Payment -->
+            <div class="flow-step" id="step-6" data-step="6">
+                <h2 class="flow-title">お支払い</h2>
+                <p class="flow-desc">金額をご確認のうえ、決済にお進みください。</p>
+
+                <div class="payment-box">
+                    <p class="payment-amount">お支払い金額: <strong id="payment-price">—</strong></p>
+                    <p class="payment-id">お問い合わせ番号: <code id="payment-ref">—</code></p>
+                </div>
+
+                <div class="flow-actions split">
+                    <button type="button" class="btn-secondary" onclick="goStep(5)">戻る</button>
+                    <button type="button" class="btn-primary btn-pay" id="btn-go-checkout" onclick="goCheckout()">決済へ進む</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="../js/qb_shared_auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        (function () {
+            var QB_SUPABASE_URL = "https://wircqvnrumxbmnzonrxe.supabase.co";
+            var QB_SUPABASE_KEY = "sb_publishable_piYc7qWxu6xunoxXWakh6Q_jB96-FIE";
+            if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
+                window.qbSupabase = supabase.createClient(QB_SUPABASE_URL, QB_SUPABASE_KEY);
+            }
+        })();
+    </script>
+    <script src="../js/questioner-app.js"></script>
+</body>
+
+</html>

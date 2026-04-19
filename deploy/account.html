@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SprintScope · アカウント（メール）</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.6; color: #1e293b; }
+    h1 { font-size: 1.5rem; }
+    ul { padding-left: 1.25rem; }
+    a { color: #0f766e; }
+    .auth-card {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+    .auth-row { margin-bottom: 0.75rem; }
+    .auth-row label { display: block; font-size: 0.9rem; margin-bottom: 0.25rem; }
+    .auth-row input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.55rem 0.65rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+    .auth-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .auth-actions button {
+      border: 1px solid #0f766e;
+      background: #0f766e;
+      color: #fff;
+      border-radius: 8px;
+      padding: 0.55rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .auth-actions button.secondary {
+      background: #fff;
+      color: #0f766e;
+    }
+    .auth-status { margin-top: 0.75rem; font-size: 0.9rem; color: #334155; word-break: break-word; }
+    code { background: #f1f5f9; padding: 0.15rem 0.3rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>SprintScope</h1>
+  <p><a href="board/index.html?tab=home">掲示板（ホーム）</a> · <a href="question-box/pages/qb_top.html">質問箱</a></p>
+
+  <section class="auth-card" aria-labelledby="auth-title">
+    <h2 id="auth-title">メールアドレス認証（Supabase）</h2>
+    <p>Googleログインとは併用できます。ここではメール/パスワードの新規登録とログインを行います。</p>
+
+    <div class="auth-row">
+      <label for="email">メールアドレス</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    </div>
+    <div class="auth-row">
+      <label for="password">パスワード</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="8文字以上推奨">
+    </div>
+
+    <div class="auth-actions">
+      <button type="button" id="btn-signup">新規登録（サインアップ）</button>
+      <button type="button" id="btn-signin">ログイン（サインイン）</button>
+      <button type="button" class="secondary" id="btn-signout">ログアウト</button>
+    </div>
+    <p class="auth-status" id="auth-status">未ログイン</p>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://wircqvnrumxbmnzonrxe.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_piYc7qWxu6xunoxXWakh6Q_jB96-FIE";
+
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const statusEl = document.getElementById("auth-status");
+
+    function getCredentials() {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      return { email, password };
+    }
+
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+    }
+
+    async function refreshSessionStatus() {
+      const { data, error } = await client.auth.getSession();
+      if (error) {
+        setStatus(`セッション取得エラー: ${error.message}`);
+        return;
+      }
+      const user = data.session?.user;
+      if (user) {
+        setStatus(`ログイン中: ${user.email} (uid: ${user.id})`);
+      } else {
+        setStatus("未ログイン");
+      }
+    }
+
+    async function handleSignUp() {
+      const { email, password } = getCredentials();
+      if (!email || !password) {
+        setStatus("メールアドレスとパスワードを入力してください。");
+        return;
+      }
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) {
+        setStatus(`サインアップ失敗: ${error.message}`);
+        return;
+      }
+      const user = data.user;
+      const needsEmailConfirm = !data.session;
+      setStatus(
+        needsEmailConfirm
+          ? `登録完了: ${user?.email ?? email}（確認メールをチェックしてください）`
+          : `登録とログイン完了: ${user?.email ?? email}`
+      );
+      await refreshSessionStatus();
+    }
+
+    async function handleSignIn() {
+      const { email, password } = getCredentials();
+      if (!email || !password) {
+        setStatus("メールアドレスとパスワードを入力してください。");
+        return;
+      }
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
+      if (error) {
+        setStatus(`サインイン失敗: ${error.message}`);
+        return;
+      }
+      setStatus(`ログイン成功: ${data.user?.email ?? email}`);
+      await refreshSessionStatus();
+    }
+
+    async function handleSignOut() {
+      const { error } = await client.auth.signOut();
+      if (error) {
+        setStatus(`ログアウト失敗: ${error.message}`);
+        return;
+      }
+      setStatus("ログアウトしました。");
+      await refreshSessionStatus();
+    }
+
+    document.getElementById("btn-signup").addEventListener("click", handleSignUp);
+    document.getElementById("btn-signin").addEventListener("click", handleSignIn);
+    document.getElementById("btn-signout").addEventListener("click", handleSignOut);
+
+    client.auth.onAuthStateChange(() => {
+      refreshSessionStatus();
+    });
+
+    refreshSessionStatus();
+  </script>
+</body>
+</html>
