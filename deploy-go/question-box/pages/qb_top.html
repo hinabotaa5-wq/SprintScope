@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>利用目的を選ぶ | SprintScope</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="qb-app qb-role-hub">
+    <header class="header glass">
+        <div class="header-inner">
+            <div class="logo-area">
+                <h1 class="main-logo" onclick="location.reload()">SprintScope</h1>
+                <p class="sub-message">スプリントフォームの改善をサポートします</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrap">
+        <div class="flow-card selection-card">
+            <h2 class="selection-title">利用目的を選択してください</h2>
+
+            <div class="role-buttons">
+                <a href="questioner_hub.html" class="role-button">
+                    <div class="role-icon" aria-hidden="true">🏃</div>
+                    <h3 class="role-title">質問する</h3>
+                    <p class="role-description">コーチに悩みや疑問を質問できます</p>
+                </a>
+
+                <a href="coach_entry.html" class="role-button">
+                    <div class="role-icon" aria-hidden="true">👨‍🏫</div>
+                    <h3 class="role-title">コーチになる</h3>
+                    <p class="role-description">選手からの質問に回答できます</p>
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <nav id="top-tabs" class="tab-menu" role="navigation" aria-label="メインメニュー">
+        <button id="tab-btn-home" type="button" class="tab-btn" onclick="switchTab('home')">
+            <span class="tab-btn-icon" aria-hidden="true">🏠</span>
+            <span class="tab-btn-text">ホーム</span>
+        </button>
+        <button id="tab-btn-upload" type="button" class="tab-btn" onclick="switchTab('upload')">
+            <span class="tab-btn-icon" aria-hidden="true">📤</span>
+            <span class="tab-btn-text">投稿</span>
+        </button>
+        <button id="tab-btn-questionbox" type="button" class="tab-btn active" onclick="location.href='qb_top.html'">
+            <span class="tab-btn-icon" aria-hidden="true">💬</span>
+            <span class="tab-btn-text">質問</span>
+        </button>
+    </nav>
+    <script>
+        function switchTab(tabName) {
+            if (tabName === "home" || tabName === "upload") {
+                location.href = `../../board/index.html?tab=${encodeURIComponent(tabName)}`;
+            }
+        }
+    </script>
+</body>
+
+</html>
