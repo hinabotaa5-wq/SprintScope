@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SprintScope</title>
+  <script>
+    window.SPRINT_API_BASE = "https://sprintscope.onrender.com";
+  </script>
+  <meta http-equiv="refresh" content="0; url=board/index.html?tab=home">
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search);
+      var tab = q.get("tab");
+      if (tab === "upload") {
+        location.replace("board/index.html?tab=upload");
+        return;
+      }
+      location.replace("board/index.html?tab=home");
+    })();
+  </script>
+</head>
+<body>
+  <p><a href="board/index.html?tab=home">掲示板のホームへ</a></p>
+</body>
+</html>

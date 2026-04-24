@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: sprintscope-api
+    runtime: go
+    plan: free
+    rootDir: backend-go
+    buildCommand: go build -o app .
+    startCommand: ./app
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_UPLOAD_PRESET
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
