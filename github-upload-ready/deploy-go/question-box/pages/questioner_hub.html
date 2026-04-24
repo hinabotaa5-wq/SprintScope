@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>質問者向けトップ | SprintScope</title>
+    <script>
+        window.SPRINT_API_BASE = "https://sprintscope.onrender.com";
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="qb-app qb-questioner-hub">
+    <header class="header glass">
+        <div class="header-inner">
+            <div class="logo-area">
+                <h1 class="main-logo" onclick="location.href='qb_top.html'">SprintScope</h1>
+                <p class="sub-message">スプリントの疑問を手軽に質問できます。</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrap">
+        <section class="flow-card qb-hub-card" aria-labelledby="hub-coaches-title">
+            <h2 id="hub-coaches-title" class="flow-title">認定コーチ一覧</h2>
+            <ul class="qb-hub-coach-list" id="qb-hub-coach-list"></ul>
+        </section>
+
+        <section class="flow-card qb-hub-card qb-hub-replies-section" aria-labelledby="hub-answers-title">
+            <h2 id="hub-answers-title" class="flow-title qb-hub-replies-title">コーチからの回答</h2>
+            <p id="qb-hub-replies-hint" class="flow-hint qb-hub-replies-hint">質問送信時と同じ Google アカウントでログインすると、どの端末からでもあなたの質問と回答が表示されます。</p>
+            <div class="qb-hub-replies" id="qb-hub-replies">
+                <p class="qb-hub-replies-loading">読み込み中…</p>
+            </div>
+        </section>
+
+        <section class="flow-card qb-hub-cta-card" aria-label="次のステップ">
+            <div class="flow-actions qb-hub-primary-action">
+                <a href="questioner.html" class="btn-primary qb-hub-cta-btn">コーチに質問する</a>
+            </div>
+            <p class="qb-hub-back">
+                <a href="qb_top.html" class="btn-secondary">利用目的選択へ戻る</a>
+            </p>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        (function () {
+            var QB_SUPABASE_URL = "https://wircqvnrumxbmnzonrxe.supabase.co";
+            var QB_SUPABASE_KEY = "sb_publishable_piYc7qWxu6xunoxXWakh6Q_jB96-FIE";
+            if (typeof supabase !== "undefined" && typeof supabase.createClient === "function") {
+                window.qbSupabase = supabase.createClient(QB_SUPABASE_URL, QB_SUPABASE_KEY);
+            }
+        })();
+    </script>
+    <script type="module" src="../js/questioner_hub.js"></script>
+</body>
+
+</html>
