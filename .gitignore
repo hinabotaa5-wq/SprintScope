@@ -201,6 +201,10 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# OS / local artifacts
+.DS_Store
+*.MOV
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
