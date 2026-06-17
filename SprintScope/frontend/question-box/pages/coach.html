@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>コーチダッシュボード | SprintScope</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <script src="../../sprint-config.js"></script>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+
+<body class="qb-app coach-app">
+    <header class="header glass">
+        <div class="header-inner">
+            <div class="logo-area">
+                <h1 class="main-logo" onclick="location.href='qb_top.html'">SprintScope</h1>
+                <p class="sub-message">質問の確認と回答</p>
+            </div>
+        </div>
+    </header>
+
+    <div id="coach-dashboard-shell">
+
+    <!-- 統計情報 -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-number" id="monthly-answers">0</div>
+            <div class="stat-label">今月の質問数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="monthly-revenue">¥0</div>
+            <div class="stat-label">今月の売上</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="avg-rating">0.0</div>
+            <div class="stat-label">平均評価</div>
+        </div>
+        <div class="stat-card">
+            <button type="button" class="notification-btn" id="coach-feedback-btn">
+                <span class="notification-icon" aria-hidden="true">🔔</span>
+                <span class="notification-count" id="notification-count">0</span>
+                <span class="notification-text">フィードバック</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- プランタブ（デフォルトはすべて表示 — 片方のタブだけだとプレミアム送信が見えない） -->
+    <div class="plan-tabs">
+        <button type="button" class="plan-tab active" data-plan="all">すべて</button>
+        <button type="button" class="plan-tab" data-plan="standard">スタンダード</button>
+        <button type="button" class="plan-tab" data-plan="premium">プレミアム</button>
+    </div>
+
+    <!-- フィルターセクション -->
+    <div class="filter-section">
+        <div class="filter-tabs">
+            <button type="button" class="filter-tab active" data-filter="all">すべて</button>
+            <button type="button" class="filter-tab" data-filter="today">今日</button>
+            <button type="button" class="filter-tab" data-filter="plus">動画付き</button>
+            <button type="button" class="filter-tab" data-filter="text">テキストのみ</button>
+        </div>
+    </div>
+
+    <!-- 質問グリッド（掲示板の video-grid と同様のカラム幅） -->
+    <div class="coach-video-grid video-grid" id="coach-main-grid">
+        <p>読み込み中...</p>
+    </div>
+    </div>
+
+    <!-- 掲示板の分析画面に相当：質問表示 + コーチ回答欄 -->
+    <div id="coach-analysis-screen" class="coach-analysis-screen" hidden>
+        <div class="coach-analysis-toolbar">
+            <button type="button" class="btn-secondary coach-analysis-back" id="coach-btn-back">← 一覧に戻る</button>
+            <h2 class="coach-analysis-title" id="coach-analysis-heading">質問への回答</h2>
+        </div>
+
+        <div class="coach-analysis-player-block" id="coach-player-block" hidden>
+            <div class="coach-analysis-video-wrap">
+                <video id="coach-analysis-video" controls playsinline webkit-playsinline></video>
+            </div>
+            <div class="coach-analysis-speed-row" id="coach-analysis-speed-row">
+                <button type="button" class="btn-speed" data-speed="0.25">0.25x</button>
+                <button type="button" class="btn-speed" data-speed="0.5">0.5x</button>
+                <button type="button" class="btn-speed active" data-speed="1">1.0x</button>
+            </div>
+        </div>
+
+        <section class="coach-analysis-question-block" aria-label="届いた質問">
+            <h3 class="coach-analysis-subheading">選手からの質問</h3>
+            <div id="coach-analysis-question-text" class="coach-analysis-question-text"></div>
+        </section>
+
+        <section class="coach-analysis-advice-block" aria-label="コーチの回答">
+            <h3 class="coach-analysis-subheading">アドバイス・回答</h3>
+            <p class="coach-analysis-hint" id="coach-advice-format-hint"></p>
+            <div class="input-group coach-advice-text-wrap">
+                <label for="coach-advice-textarea">テキスト</label>
+                <textarea id="coach-advice-textarea" class="coach-advice-textarea" rows="6" placeholder="アドバイス・回答を入力"></textarea>
+            </div>
+            <div id="coach-advice-video-block" class="coach-advice-video-block" hidden>
+                <div class="input-group">
+                    <label for="coach-advice-video-input">回答用動画（任意・動画付き質問のときのみ）</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="coach-advice-video-input" accept="video/*" class="file-upload-input">
+                        <div class="file-upload-label">
+                            <span class="upload-text">タップして動画を選択</span>
+                            <span class="file-name" id="coach-advice-video-name">未選択</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="coach-analysis-actions">
+                <button type="button" class="btn-primary" id="coach-btn-submit-advice">回答を送信する</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- テンプレート -->
+    <template id="coach-video-card-template">
+        <div class="video-thumbnail-wrapper">
+            <img src="" alt="" class="video-thumbnail coach-qb-thumb-img" width="400" height="225" decoding="async">
+            <div class="coach-qb-thumb-placeholder" hidden>テキストのみ</div>
+            <div class="phase-label"></div>
+            <div class="status-badge"></div>
+            <div class="plan-badge"></div>
+            <div class="question-count"></div>
+        </div>
+        <div class="video-info">
+            <p class="video-description"></p>
+            <div class="video-meta">
+                <span class="user-name"></span>
+                <span class="post-date"></span>
+            </div>
+        </div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module" src="../js/coach.js"></script>
+</body>
+
+</html>

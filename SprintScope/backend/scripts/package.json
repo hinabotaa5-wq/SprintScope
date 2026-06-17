@@ -1,0 +1,12 @@
+{
+  "name": "sprintscope-backend-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test-checkout": "node test-checkout.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "dotenv": "^16.4.7"
+  }
+}
