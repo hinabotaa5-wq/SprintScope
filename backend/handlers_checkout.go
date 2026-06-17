@@ -11,7 +11,7 @@ import (
 )
 
 type checkoutQuestion struct {
-	ID            string `json:"id"`
+	ID            flexString `json:"id"`
 	PaymentRef    string `json:"payment_ref"`
 	AmountYen     int    `json:"amount_yen"`
 	PaymentStatus string `json:"payment_status"`
@@ -63,7 +63,7 @@ func (s *server) handleKomojuCheckout(w http.ResponseWriter, r *http.Request) {
 		"return_url":         returnURL,
 		"external_order_num": ref,
 		"metadata": map[string]string{
-			"question_id": question.ID,
+			"question_id": question.ID.String(),
 			"tier":        r.URL.Query().Get("tier"),
 			"format":      r.URL.Query().Get("format"),
 		},

@@ -22,6 +22,12 @@ This file maps existing frontend CRUD calls to Go API endpoints.
 - `questions.insert` -> `POST /api/questions`
 - `questions.update` -> `PATCH /api/questions/{id}`
 
+## Checkout (KOMOJU)
+
+- hosted checkout redirect -> `GET /api/checkout/komoju?ref={ref}&amount={yen}&tier=&format=&payment_method=card|paypay|applepay`
+- return from KOMOJU -> `GET /api/checkout/return?ref={ref}&session_id={id}` (redirects to `FRONTEND_RETURN_URL`)
+- payment webhook -> `POST /api/webhooks/komoju`
+
 ## Core
 
 - `auth.getSession + debug /api/me` -> `GET /api/me`

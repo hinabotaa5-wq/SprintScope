@@ -355,20 +355,20 @@ window.switchTab = async function (tabName) {
     const phaseTabs = document.getElementById("phase-tabs-container");
 
     const hideMainChrome = tabName === "profile" || tabName === "analysis";
-    const hideHeaderForMobileUpload = tabName === "upload" && isMobileLayout();
     document.body.classList.toggle("board-hide-bottom-nav", hideMainChrome);
-    document.body.classList.toggle("board-upload-mobile", hideHeaderForMobileUpload);
+    document.body.classList.toggle("board-upload-active", tabName === "upload");
 
-    if (topTabs) {
-        topTabs.style.display = hideMainChrome ? "none" : "flex";
+    // ヘッダーは「ホーム画面」のときだけ block (表示) 、それ以外は一律 none (非表示)
+    if (header) {
+        if (tabName === "home") {
+            header.style.display = "block"; // または元に合わせて "flex" など
+        } else {
+            header.style.display = "none";
+        }
     }
 
     if (phaseTabs) {
-        phaseTabs.style.display = tabName === "upload" || tabName === "profile" || tabName === "analysis" ? "none" : "flex";
-    }
-
-    if (header) {
-        header.style.display = hideMainChrome || hideHeaderForMobileUpload ? "none" : "block";
+        phaseTabs.style.display = tabName === "home" ? "flex" : "none";
     }
 
     renderVideos();

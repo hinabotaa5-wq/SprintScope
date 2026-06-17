@@ -22,6 +22,10 @@ alter table public.questions enable row level security;
 alter table public.questions add column if not exists coach_advice_text text;
 alter table public.questions add column if not exists coach_advice_video_url text;
 alter table public.questions add column if not exists questioner_uid text;
+alter table public.questions add column if not exists payment_status text not null default 'pending';
+alter table public.questions add column if not exists komoju_session_id text;
+
+create index if not exists questions_payment_ref_idx on public.questions (payment_ref);
 
 -- RLS ポリシー（再実行する場合は先に DROP してから CREATE）
 -- API キー／クライアントによっては anon ではなく authenticated として届くため、両方に付与
