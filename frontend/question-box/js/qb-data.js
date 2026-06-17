@@ -5,7 +5,9 @@
 export const CLOUD_NAME = "doipeut1j";
 export const UPLOAD_PRESET = "sprint_preset";
 
-export const CHECKOUT_BASE_URL = window.SPRINT_CHECKOUT_BASE_URL || "";
+export const CHECKOUT_BASE_URL =
+  window.SPRINT_CHECKOUT_BASE_URL ||
+  `${window.SPRINT_API_BASE || "http://localhost:8080"}/api/checkout/komoju`;
 
 export const PRICES = {
   standard: { text: 100, plus: 150 },

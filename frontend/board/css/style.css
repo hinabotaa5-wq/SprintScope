@@ -133,7 +133,7 @@
   }
 
   .board-app .upload-card {
-    padding: 1.15rem 1rem 1.25rem;
+    padding: 0.8rem;
   }
 
   .board-app #analysis-screen {
@@ -438,5 +438,57 @@
     flex-wrap: wrap !important;
     gap: 0.35rem !important;
     justify-content: center !important;
+  }
+}
+
+/* ===========================================================================
+   投稿タブがアクティブな時の最上部配置レイアウト（完全上書き版）
+   =========================================================================== */
+/* 1. bodyとアプリ全体のコンテナの上部余白を完全にゼロにする */
+body.board-upload-active,
+body.board-upload-active .board-app,
+body.board-upload-active .qb-app {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important; /* 上詰めに強制 */
+}
+
+/* 2. 投稿画面のコンテナを上詰めにし、不要な高さを排除する */
+body.board-upload-active #upload-screen {
+  margin-top: 0 !important;
+  padding: 0 1rem 0.5rem !important; /* 既存の左右・下余白はキープ */
+  padding-top: 1.5rem !important;    /* 上側だけカードのための程よい余白を設定 */
+  
+  /* 縦位置の突っ張り棒を完全に破壊して上詰めに */
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  
+  /* 画面中央に引き留める高さをリセット */
+  min-height: 0 !important;
+  height: auto !important;
+  flex: 1 1 auto !important;
+}
+
+/* 3. カード自身の位置を上に引っ張り上げる */
+body.board-upload-active .upload-card {
+  margin-top: 0 !important;
+  margin-bottom: auto !important;
+  top: 0 !important;
+  position: relative !important;
+}
+
+@media (max-width: 767px) {
+
+  body.board-upload-active #upload-screen {
+    padding-top: 12px !important;
+  }
+
+  body.board-upload-active .upload-card {
+    margin-top: 0 !important;
+    padding: 0.75rem !important;
   }
 }

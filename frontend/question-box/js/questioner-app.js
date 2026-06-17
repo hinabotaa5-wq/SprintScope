@@ -1,7 +1,8 @@
 import { qbEnsureSignedIn, getQbUid, QB_AUTH_REDIRECTING } from "./qb_shared_auth.js";
 import { apiFetch, apiUploadVideo } from "../../api-client.js";
 
-const CHECKOUT_BASE_URL = window.SPRINT_CHECKOUT_BASE_URL || "";
+const API_BASE = window.SPRINT_API_BASE || "http://localhost:8080";
+const CHECKOUT_BASE_URL = window.SPRINT_CHECKOUT_BASE_URL || `${API_BASE}/api/checkout/komoju`;
 const PRICES = {
   standard: { text: 100, plus: 150 },
   premium: { text: 200, plus: 250 },
@@ -274,12 +275,12 @@ async function submitToCoach() {
     tier,
     format,
     question_text: questionText,
-    coach_id: tier === "premium" ? getSelectedCoachId() : null,
+    coach_id: tier === "premium" ? String(getSelectedCoachId()) : null,
     amount_yen: getPriceYen(),
     payment_ref: pendingCheckoutRef,
     video_filename: file ? file.name : null,
     video_storage_path,
-    questioner_uid,
+    questioner_uid: String(questioner_uid),
   };
 
   try {
@@ -316,24 +317,61 @@ function goCheckout() {
     amount: String(amount),
     tier: getTier(),
     format: getFormat(),
+    payment_method: getPaymentMethod(),
   });
   if (getTier() === "premium") {
     params.set("coach", getSelectedCoachId());
   }
 
-  if (CHECKOUT_BASE_URL) {
-    const url = CHECKOUT_BASE_URL.includes("?")
-      ? `${CHECKOUT_BASE_URL}&${params}`
-      : `${CHECKOUT_BASE_URL}?${params}`;
-    window.location.href = url;
+  const url = CHECKOUT_BASE_URL.includes("?")
+    ? `${CHECKOUT_BASE_URL}&${params}`
+    : `${CHECKOUT_BASE_URL}?${params}`;
+  window.location.href = url;
+}
+
+function handlePaymentReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get("payment");
+  if (!payment) return;
+
+  const ref = params.get("ref") || "";
+  window.history.replaceState({}, "", window.location.pathname);
+
+  if (payment === "success") {
+    qbSwalFire({
+      icon: "success",
+      title: "お支払いが完了しました",
+      html: `<p style="text-align:left;font-size:0.9rem;color:#44403c;line-height:1.55">ご質問を受け付けました。コーチからの回答はマイページで確認できます。</p>
+        <p style="text-align:left;font-size:0.85rem;color:#78716c;margin-top:0.75rem"><strong>お問い合わせ番号:</strong> ${ref}</p>`,
+      confirmButtonColor: "#2f8a96",
+    });
+    return;
+  }
+
+  if (payment === "already_paid") {
+    qbSwalFire({
+      icon: "info",
+      title: "すでにお支払い済みです",
+      text: ref ? `お問い合わせ番号: ${ref}` : "",
+      confirmButtonColor: "#2f8a96",
+    });
+    return;
+  }
+
+  if (payment === "cancelled") {
+    qbSwalFire({
+      icon: "warning",
+      title: "決済がキャンセルされました",
+      text: "もう一度お試しください。",
+      confirmButtonColor: "#2f8a96",
+    });
     return;
   }
 
   qbSwalFire({
     icon: "info",
-    title: "デモ表示です",
-    html: `<p style="text-align:left;font-size:0.9rem;color:#44403c;line-height:1.55">本番環境では、連携した決済サービスへ移動します。</p>
-      <p style="text-align:left;font-size:0.85rem;color:#78716c;margin-top:0.75rem"><strong>お支払い金額:</strong> ${formatYen(amount)}<br><strong>お問い合わせ番号:</strong> ${pendingCheckoutRef}</p>`,
+    title: "決済を確認中です",
+    text: "反映に時間がかかる場合があります。しばらくしてからマイページをご確認ください。",
     confirmButtonColor: "#2f8a96",
   });
 }
@@ -361,4 +399,5 @@ document.addEventListener("DOMContentLoaded", () => {
   updateVideoVisibility();
   setStepIndicator(1);
   initListeners();
+  handlePaymentReturn();
 });

@@ -11,6 +11,7 @@ type server struct {
 	cfg      config
 	auth     *authVerifier
 	supabase *supabaseClient
+	komoju   *komojuClient
 }
 
 func newServer(cfg config, auth *authVerifier) *server {
@@ -18,6 +19,7 @@ func newServer(cfg config, auth *authVerifier) *server {
 		cfg:      cfg,
 		auth:     auth,
 		supabase: newSupabaseClient(cfg.SupabaseURL, cfg.SupabaseService),
+		komoju:   newKomojuClient(cfg),
 	}
 }
 
@@ -38,6 +40,9 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("/api/auth/password/signup", withMethods(s.handleAuthPasswordSignup, http.MethodPost, http.MethodOptions))
 	mux.HandleFunc("/api/auth/password/signin", withMethods(s.handleAuthPasswordSignin, http.MethodPost, http.MethodOptions))
 	mux.HandleFunc("/api/auth/google/start", withMethods(s.handleAuthGoogleStart, http.MethodGet, http.MethodOptions))
+	mux.HandleFunc("/api/checkout/komoju", withMethods(s.handleKomojuCheckout, http.MethodGet, http.MethodOptions))
+	mux.HandleFunc("/api/checkout/return", withMethods(s.handleCheckoutReturn, http.MethodGet, http.MethodOptions))
+	mux.HandleFunc("/api/webhooks/komoju", withMethods(s.handleKomojuWebhook, http.MethodPost, http.MethodOptions))
 	return s.withMiddleware(mux)
 }
 

@@ -44,8 +44,37 @@ type boardComment struct {
 	ReplyTo   json.RawMessage `json:"reply_to,omitempty"`
 }
 
+// flexString accepts JSON strings and numbers (Supabase may return serial/bigint ids).
+type flexString string
+
+func (s *flexString) UnmarshalJSON(b []byte) error {
+	if len(b) == 0 || string(b) == "null" {
+		*s = ""
+		return nil
+	}
+	if b[0] == '"' {
+		var v string
+		if err := json.Unmarshal(b, &v); err != nil {
+			return err
+		}
+		*s = flexString(v)
+		return nil
+	}
+	// Handle numbers by converting to string directly
+	*s = flexString(string(b))
+	return nil
+}
+
+func (s flexString) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(s))
+}
+
+func (s flexString) String() string {
+	return string(s)
+}
+
 type questionRow struct {
-	ID                  string `json:"id,omitempty"`
+	ID                  flexString `json:"id,omitempty"`
 	CreatedAt           string `json:"created_at,omitempty"`
 	Tier                string `json:"tier"`
 	Format              string `json:"format"`
@@ -58,4 +87,6 @@ type questionRow struct {
 	QuestionerUID       string `json:"questioner_uid,omitempty"`
 	CoachAdviceText     string `json:"coach_advice_text,omitempty"`
 	CoachAdviceVideoURL string `json:"coach_advice_video_url,omitempty"`
+	PaymentStatus       string `json:"payment_status,omitempty"`
+	KomojuSessionID     string `json:"komoju_session_id,omitempty"`
 }
