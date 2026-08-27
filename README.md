@@ -90,7 +90,7 @@ Windows で Make が使えない場合は、`backend/start-dev.bat` または `b
 cd backend && make dev
 ```
 
-`.env` は Git 管理対象外です。サンプルは `backend/.env.example`（および `backend/env.example`）を参照してください。
+`.env` は Git 管理対象外です。サンプルは `backend/.env.example` を参照してください。
 
 主な変数:
 
@@ -129,8 +129,7 @@ SprintScope/
 │   ├── router.go                  # ルーティング定義
 │   ├── main.go                    # エントリーポイント
 │   ├── Makefile                   # ローカル起動 (make dev)
-│   ├── .env.example               # 環境変数のサンプル
-│   └── env.example                # 同上（互換用）
+│   └── .env.example               # 環境変数のサンプル
 ├── frontend/                      # フロントエンド
 │   ├── board/                     # 掲示板画面 (HTML, CSS, JS)
 │   ├── question-box/              # 質問箱画面 (HTML, CSS, JS)

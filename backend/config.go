@@ -22,20 +22,22 @@ type config struct {
 
 func loadConfig() config {
 	port := getenv("PORT", "8080")
-	supabaseURL := getenv("SUPABASE_URL", "https://wircqvnrumxbmnzonrxe.supabase.co")
 	publicBaseURL := strings.TrimRight(getenv("PUBLIC_BASE_URL", "http://localhost:"+port), "/")
 	cfg := config{
 		Port:                port,
 		PublicBaseURL:       publicBaseURL,
 		FrontendReturnURL:   os.Getenv("FRONTEND_RETURN_URL"),
-		SupabaseURL:         supabaseURL,
+		SupabaseURL:         os.Getenv("SUPABASE_URL"),
 		SupabaseAnonKey:     os.Getenv("SUPABASE_ANON_KEY"),
 		SupabaseService:     os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 		AllowedOrigins:      parseCSV(getenv("ALLOWED_ORIGINS", "*")),
-		CloudName:           getenv("CLOUDINARY_CLOUD_NAME", "doipeut1j"),
-		CloudPreset:         getenv("CLOUDINARY_UPLOAD_PRESET", "sprint_preset"),
+		CloudName:           os.Getenv("CLOUDINARY_CLOUD_NAME"),
+		CloudPreset:         os.Getenv("CLOUDINARY_UPLOAD_PRESET"),
 		KomojuSecretKey:     os.Getenv("KOMOJU_SECRET_KEY"),
 		KomojuWebhookSecret: os.Getenv("KOMOJU_WEBHOOK_SECRET"),
+	}
+	if cfg.SupabaseURL == "" {
+		log.Println("warning: SUPABASE_URL is empty; auth and API calls will fail")
 	}
 	if cfg.FrontendReturnURL == "" {
 		log.Println("warning: FRONTEND_RETURN_URL is empty; checkout return redirects will fail")
@@ -45,6 +47,9 @@ func loadConfig() config {
 	}
 	if cfg.SupabaseService == "" {
 		log.Println("warning: SUPABASE_SERVICE_ROLE_KEY is empty; write endpoints will fail")
+	}
+	if cfg.CloudName == "" || cfg.CloudPreset == "" {
+		log.Println("warning: CLOUDINARY_CLOUD_NAME or CLOUDINARY_UPLOAD_PRESET is empty; video upload will fail")
 	}
 	return cfg
 }

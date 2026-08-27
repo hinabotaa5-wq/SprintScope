@@ -9,8 +9,8 @@ if errorlevel 1 (
 )
 
 if not exist ".env" (
-    echo Copy env.example to .env and fill in your keys.
-    echo   copy env.example .env
+    echo Copy .env.example to .env and fill in your keys.
+    echo   copy .env.example .env
 )
 
 echo Starting Go API at http://localhost:8080

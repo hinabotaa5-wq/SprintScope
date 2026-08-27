@@ -6,8 +6,8 @@ if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
 }
 
 if (-not (Test-Path ".env")) {
-    Write-Host "Copy env.example to .env and fill in your keys:"
-    Write-Host "  Copy-Item env.example .env"
+    Write-Host "Copy .env.example to .env and fill in your keys:"
+    Write-Host "  Copy-Item .env.example .env"
 }
 
 Write-Host "Starting Go API at http://localhost:8080"

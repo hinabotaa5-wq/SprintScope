@@ -27,26 +27,30 @@ alter table public.questions add column if not exists komoju_session_id text;
 
 create index if not exists questions_payment_ref_idx on public.questions (payment_ref);
 
--- RLS ポリシー（再実行する場合は先に DROP してから CREATE）
--- API キー／クライアントによっては anon ではなく authenticated として届くため、両方に付与
+-- 動画は Cloudinary へアップロードする（フロントの CLOUD_NAME / UPLOAD_PRESET）
+--
+-- RLS: ブラウザの anon キーでは questions を直接触れない。
+-- 読み書きは Go API（SUPABASE_SERVICE_ROLE_KEY）経由のみ。service_role は RLS をバイパスする。
 drop policy if exists "questions_insert_anon" on public.questions;
-create policy "questions_insert_anon"
-  on public.questions for insert
-  to anon, authenticated
-  with check (true);
-
--- 動画は Supabase ではなく Cloudinary にアップロード（QB/script.js の CLOUD_NAME / UPLOAD_PRESET）
-
 drop policy if exists "questions_select_anon" on public.questions;
-create policy "questions_select_anon"
-  on public.questions for select
-  to anon, authenticated
-  using (true);
-
--- コーチ回答の更新（本番は Edge Function 等での限定更新を推奨）
 drop policy if exists "questions_update_anon" on public.questions;
-create policy "questions_update_anon"
-  on public.questions for update
-  to anon, authenticated
-  using (true)
-  with check (true);
+drop policy if exists "Allow anon to insert questions" on public.questions;
+drop policy if exists "Allow anon to select questions" on public.questions;
+drop policy if exists "Allow anon to update questions" on public.questions;
+drop policy if exists "allow_anon_insert" on public.questions;
+
+do $$
+declare
+  pol record;
+begin
+  for pol in
+    select policyname
+    from pg_policies
+    where schemaname = 'public' and tablename = 'questions'
+  loop
+    execute format('drop policy if exists %I on public.questions', pol.policyname);
+  end loop;
+end $$;
+
+revoke all on table public.questions from anon, authenticated;
+grant all on table public.questions to service_role;
