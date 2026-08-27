@@ -10,6 +10,9 @@ Thumbs.db
 backend/.env
 .env
 
+# Local Go module cache (do not commit)
+/go/
+
 # Node.js
 node_modules/
 npm-debug.log*
