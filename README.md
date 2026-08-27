@@ -45,45 +45,76 @@ SprintScope は、ユーザーが自身の動画（陸上競技などのスプ�
 
 ## 開発環境のセットアップ
 
+前提: Go と Make がインストールされていること。
+
 ### 1. データベース (Supabase) の準備
 
-1. Supabase で新規プロジェクトを作成します。
-2. Supabase SQL Editor を開き、ルートディレクトリにある以下の SQL スクリプトを実行して、テーブルと RLS ポリシーを作成します。
-   - [supabase-board-schema.sql](file:///Users/hinata/SprintScope%20%E6%94%B9/supabase-board-schema.sql)
-   - [supabase_questions.sql](file:///Users/hinata/SprintScope%20%E6%94%B9/supabase_questions.sql)
+1. Supabase でプロジェクトを用意します（新規作成、または既存プロジェクトを利用）。
+2. Supabase SQL Editor を開き、リポジトリ直下の SQL を実行してテーブルと RLS ポリシーを作成します。
+   - [supabase-board-schema.sql](supabase-board-schema.sql)
+   - [supabase_questions.sql](supabase_questions.sql)
 3. 認証設定で Google OAuth またはメール OTP を有効化します。
 
-### 2. バックエンド (Go) のセットアップ
+### 2. バックエンドのローカル起動
 
-1. `/backend` ディレクトリへ移動します。
-2. `.env` ファイルを作成し、必要な環境変数を設定します（`env.example` を参考にしてください）。
-   ```bash
-   cp env.example .env
-   ```
-   **環境変数一覧:**
-   - `PORT`: サーバー起動ポート (デフォルト: `8080`)
-   - `PUBLIC_BASE_URL`: バックエンドの公開URL
-   - `ALLOWED_ORIGINS`: CORSで許可するフロントエンドのオリジン（カンマ区切り）
-   - `FRONTEND_RETURN_URL`: 決済完了後のフロントエンド戻り先URL
-   - `SUPABASE_URL`: Supabase のプロジェクトURL
-   - `SUPABASE_ANON_KEY`: Supabase の anon (public) キー
-   - `SUPABASE_SERVICE_ROLE_KEY`: Supabase の service_role キー (Webhook更新などに必要)
-   - `KOMOJU_SECRET_KEY`: KOMOJU の秘密鍵 (テスト/本番)
-   - `KOMOJU_WEBHOOK_SECRET`: KOMOJU の Webhook 署名検証用キー
-   - `CLOUDINARY_CLOUD_NAME`: Cloudinary のクラウド名
-   - `CLOUDINARY_UPLOAD_PRESET`: Cloudinary のアップロードプリセット (Unsigned)
-3. 依存ライブラリをインストールし、サーバーを起動します。
-   ```bash
-   go run .
-   ```
-   または、Windows の場合は `start-dev.bat` や `start-dev.ps1` を利用して起動することもできます。
+`.env` が無い状態でも、次のコマンドだけで `.env` が生成され、Go サーバーが起動します。
 
-### 3. フロントエンドのセットアップ
+```bash
+cd backend && make dev
+```
+
+- `.env` が無いとき: `.env.example` をコピーして `.env` を作り、その内容を読み込んで `go run .` します。
+- `.env` が既にあるとき: 既存の `.env` は上書きせず、そのまま使って起動します。
+- サーバーは `http://localhost:8080` で待ち受けます（`PORT` / `PUBLIC_BASE_URL` のデフォルト）。
+
+Windows で Make が使えない場合は、`backend/start-dev.bat` または `backend/start-dev.ps1` でも起動できます（その場合は事前に `.env` を用意してください）。
+
+### 3. `.env` のキーを差し替える（必要に応じて）
+
+`make dev` で作られた `.env` には、ポートや CORS などローカル固定のデフォルトが入っています。自分の Supabase / KOMOJU を使うときは、サーバーを止めたうえで `backend/.env` だけ編集します。
+
+1. `backend/.env` を開きます。
+2. **Supabase**（Dashboard → Project Settings → API）から次をコピーして置き換えます。
+   - `SUPABASE_URL` … Project URL
+   - `SUPABASE_ANON_KEY` … `anon` `public` キー
+   - `SUPABASE_SERVICE_ROLE_KEY` … `service_role` キー（書き込み・Webhook 更新に必要）
+3. **KOMOJU**（テストモードの Merchant Settings）から次をコピーして置き換えます。
+   - `KOMOJU_SECRET_KEY` … Secret Key（決済 API に必要）
+   - `KOMOJU_WEBHOOK_SECRET` … Webhook の署名検証用（コンビニ決済など Webhook を使う場合。使わなければ空のままで可）
+4. フロントの起動 URL が `http://localhost:5500` 以外なら、あわせて次も直します。
+   - `ALLOWED_ORIGINS` … CORS 許可オリジン（カンマ区切り）
+   - `FRONTEND_RETURN_URL` … 決済完了後の戻り先
+5. 保存したあと、もう一度起動します。
+
+```bash
+cd backend && make dev
+```
+
+`.env` は Git 管理対象外です。サンプルは `backend/.env.example`（および `backend/env.example`）を参照してください。
+
+主な変数:
+
+| 変数 | 役割 |
+| --- | --- |
+| `PORT` | サーバー起動ポート（デフォルト `8080`） |
+| `PUBLIC_BASE_URL` | バックエンドの公開 URL |
+| `ALLOWED_ORIGINS` | CORS で許可するフロントのオリジン |
+| `FRONTEND_RETURN_URL` | 決済完了後のフロント戻り先 |
+| `SUPABASE_URL` | Supabase のプロジェクト URL |
+| `SUPABASE_ANON_KEY` | Supabase の anon キー |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase の service_role キー |
+| `KOMOJU_SECRET_KEY` | KOMOJU の秘密鍵 |
+| `KOMOJU_WEBHOOK_SECRET` | KOMOJU Webhook 署名検証用キー |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary のクラウド名 |
+| `CLOUDINARY_UPLOAD_PRESET` | Cloudinary の Unsigned アップロードプリセット |
+
+### 4. フロントエンドのセットアップ
 
 フロントエンドは静的ファイルで構成されています。
-1. `frontend/supabase-client.js` 内の `SUPABASE_URL` と `SUPABASE_ANON_KEY` を、ご自身の Supabase プロジェクトのものに書き換えます。
-2. 静的ファイル用のローカル開発サーバー（例: VS Code の Live Server、または `npx http-server` など）を起動します。
-   - `ALLOWED_ORIGINS` で設定したポート（例: `http://localhost:5500`）で起動するようにしてください。
+
+1. `frontend/supabase-client.js` の `SUPABASE_URL` と `SUPABASE_ANON_KEY` を、`.env` に書いたものと同じ値にします。
+2. 静的ファイル用のローカルサーバー（VS Code の Live Server、`npx http-server` など）を起動します。
+3. フロントのオリジンを `ALLOWED_ORIGINS` と揃えます（デフォルトは `http://localhost:5500`）。
 
 ---
 
@@ -97,7 +128,9 @@ SprintScope/
 │   ├── handlers_*.go              # APIハンドラー (board, questions, checkout, uploads等)
 │   ├── router.go                  # ルーティング定義
 │   ├── main.go                    # エントリーポイント
-│   └── env.example                # 環境変数のサンプル
+│   ├── Makefile                   # ローカル起動 (make dev)
+│   ├── .env.example               # 環境変数のサンプル
+│   └── env.example                # 同上（互換用）
 ├── frontend/                      # フロントエンド
 │   ├── board/                     # 掲示板画面 (HTML, CSS, JS)
 │   ├── question-box/              # 質問箱画面 (HTML, CSS, JS)
