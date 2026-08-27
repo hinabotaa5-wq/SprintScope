@@ -116,15 +116,6 @@ cd backend && make dev
 2. 静的ファイル用のローカルサーバー（VS Code の Live Server、`npx http-server` など）を起動します。
 3. フロントのオリジンを `ALLOWED_ORIGINS` と揃えます（デフォルトは `http://localhost:5500`）。
 
-### GitHub Pages
-
-フロントは GitHub Pages で公開できます。初回だけ、リポジトリの **Settings → Pages → Source** で **GitHub Actions** を選んでください。`main` に push すると `frontend/` が公開されます。
-
-- サイト: https://hinabotaa5-wq.github.io/SprintScope/
-- 掲示板: https://hinabotaa5-wq.github.io/SprintScope/board/index.html
-
-GitHub Pages は静的ファイルだけです。投稿・ログイン・決済を動かすには、Go バックエンドを別ホストに置き、フロントの `SPRINT_API_BASE` とそのオリジンを `ALLOWED_ORIGINS` に追加します。
-
 ---
 
 ## ディレクトリ構成
@@ -139,8 +130,7 @@ SprintScope/
 │   ├── main.go                    # エントリーポイント
 │   ├── Makefile                   # ローカル起動 (make dev)
 │   └── .env.example               # 環境変数のサンプル
-├── frontend/                      # フロントエンド（GitHub Pages の公開元）
-│   ├── index.html                 # Pages の入口（掲示板へ誘導）
+├── frontend/                      # フロントエンド
 │   ├── board/                     # 掲示板画面 (HTML, CSS, JS)
 │   ├── question-box/              # 質問箱画面 (HTML, CSS, JS)
 │   ├── api-client.js              # バックエンドAPI呼出クライアント
